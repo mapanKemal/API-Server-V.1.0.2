@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Transaction\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,7 +35,13 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::prefix('transaction')->group(function () {
         Route::prefix('project')->group(function () {
-            // Route::get('newTransaction', [])
+            Route::apiResource('/', Project::class);
+        });
+        Route::prefix('cashadvanced')->group(function () {
+            Route::apiResource('/', Project::class);
+        });
+        Route::prefix('reimbursement')->group(function () {
+            Route::apiResource('/', Project::class);
         });
     });
 });
