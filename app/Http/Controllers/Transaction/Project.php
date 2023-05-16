@@ -19,11 +19,6 @@ class Project extends Controller
     {
         //
     }
-    public function index_newTransaction()
-    {
-        //
-        return response(TransactionProject::all());
-    }
     public function index_transDetail(string $uuid)
     {
         //
@@ -109,44 +104,30 @@ class Project extends Controller
     }
     public function create_header(Request $request)
     {
-        $company = Company::select('COMP_CODE')->where('COMP_ID', $request->compId)->first();
-        $departement = Departement::select('DEPT_CODE')->where('DEPT_ID', $request->deptId)->first();
-        $idConfig = [
-            'table' => 'tr_project_request',
-            'field' => 'PRJ_NUMBER',
-            'length' => 16,
-            'prefix' => $company->COMP_CODE . '/' . $departement->DEPT_CODE . '/' . date('Ym') . '/'
-        ];
-        //
-        $task = TransactionProject::create([
-            "EMPL_ID" => $request->emplId,
+        $idConfig = [];
+        $newData = TransactionProject::create([
+            "TRANS_TY_ID" => '',
+            "DT_TRANS_TY_ID" => '',
             "PRJ_UUID" => Uuid::uuid4(),
             "PRJ_NUMBER" => IdGenerator::generate($idConfig),
-            // "PRJ_SUBJECT" => '',
-            // "PRJ_NOTES" => '',
-            // "PRJ_TOTAL_AMOUNT_REQUEST" => '',
-            // "PRJ_TOTAL_AMOUNT_USED" => '',
-            // "PRJ_DIFF_AMOUNT" => '',
-            // "PRJ_REQUEST_DATE" => '',
-            // "PRJ_COMPLETE_DATE" => '',
-            // "PRJ_ATTTACHMENT" => '',
-            // "PRJ_ATTTACHMENT_SIZE" => '',
-            // "PRJ_CLOSE" => '',
-            // "PRJ_CLOSE_DATE" => '',
-            // "PRJ_CLOSE_REASON" => '',
-            // "PRJ_CLOSE_BY" => '',
-            // "PRJ_DELETE" => '',
-            // "PRJ_DELETE_DATE" => '',
-            // "PRJ_DELETE_REASON" => '',
-            // "PRJ_DELETE_BY" => '',
+            "PRJ_SUBJECT" => '',
+            "PRJ_NOTES" => '',
+            "PRJ_TOTAL_AMOUNT_REQUEST" => '',
+            "PRJ_TOTAL_AMOUNT_USED" => '',
+            "PRJ_DIFF_AMOUNT" => '',
+            "PRJ_REQUEST_DATE" => '',
+            "PRJ_COMPLETE_DATE" => '',
+            "PRJ_ATTTACHMENT" => '',
+            "PRJ_ATTTACHMENT_SIZE" => '',
+            "PRJ_CLOSE" => '',
+            "PRJ_CLOSE_DATE" => '',
+            "PRJ_CLOSE_REASON" => '',
+            "PRJ_CLOSE_BY" => '',
+            "PRJ_DELETE" => '',
+            "PRJ_DELETE_DATE" => '',
+            "PRJ_DELETE_REASON" => '',
+            "PRJ_DELETE_BY" => '',
         ]);
-        // $task = [
-        //     "EMPL_ID" => $request->emplId,
-        //     "PRJ_UUID" => Uuid::uuid4(),
-        //     "PRJ_NUMBER" => IdGenerator::generate($idConfig),
-        //     "CREATED_AT" => date('Y-m-d H:i:s')
-        // ];
-        return response($task);
     }
 
     /**
@@ -163,7 +144,6 @@ class Project extends Controller
     public function show(string $id)
     {
         //
-        return response($id);
     }
 
     /**

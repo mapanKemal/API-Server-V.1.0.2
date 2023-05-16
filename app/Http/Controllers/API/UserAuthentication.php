@@ -157,7 +157,7 @@ class UserAuthentication extends Controller
     public function AuthenticationNeeded()
     {
         //
-        return response(['message' => 'Unauthorized'], 401);
+        return response(['message' => 'Unauthenticated.'], 401);
     }
 
     /**
