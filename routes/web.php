@@ -13,8 +13,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:api')->get('/', function () {
-    return ['Laravel' => app()->version()];
+// Route::middleware('auth:api')->get('/', function () {
+//     return ['Laravel' => app()->version()];
+// });
+Route::get('/', function () {
+    return response([['Laravel' => app()->version()], ['Time' => date('Y M d, H:i:s')]]);
 });
 
 require __DIR__ . '/auth.php';

@@ -18,6 +18,12 @@ class Project extends Controller
     public function index()
     {
         //
+        return response(TransactionProject::all());
+    }
+    public function index_newTransaction()
+    {
+        //
+        return response(TransactionProject::all());
     }
     public function index_transDetail(string $uuid)
     {
@@ -104,30 +110,30 @@ class Project extends Controller
     }
     public function create_header(Request $request)
     {
-        $idConfig = [];
+        $dept = Departement::where('DEPT_ID', $request->deptId)->first();
+        $comp = Company::where('COMP_ID', $request->compId)->first();
+        $idConfig = [
+            'table' => 'tr_project_request',
+            'field' => 'PRJ_NUMBER',
+            'length' => 17,
+            'prefix' => $comp->COMP_CODE . '/' . $dept->DEPT_CODE . '/' . date('Ym')
+        ];
         $newData = TransactionProject::create([
-            "TRANS_TY_ID" => '',
-            "DT_TRANS_TY_ID" => '',
+            // "TRANS_TY_ID" => '',
+            // "DT_TRANS_TY_ID" => '',
+            "EMPL_ID" => $request->emplId,
             "PRJ_UUID" => Uuid::uuid4(),
             "PRJ_NUMBER" => IdGenerator::generate($idConfig),
             "PRJ_SUBJECT" => '',
             "PRJ_NOTES" => '',
-            "PRJ_TOTAL_AMOUNT_REQUEST" => '',
-            "PRJ_TOTAL_AMOUNT_USED" => '',
-            "PRJ_DIFF_AMOUNT" => '',
-            "PRJ_REQUEST_DATE" => '',
-            "PRJ_COMPLETE_DATE" => '',
             "PRJ_ATTTACHMENT" => '',
-            "PRJ_ATTTACHMENT_SIZE" => '',
-            "PRJ_CLOSE" => '',
-            "PRJ_CLOSE_DATE" => '',
-            "PRJ_CLOSE_REASON" => '',
-            "PRJ_CLOSE_BY" => '',
-            "PRJ_DELETE" => '',
-            "PRJ_DELETE_DATE" => '',
-            "PRJ_DELETE_REASON" => '',
-            "PRJ_DELETE_BY" => '',
         ]);
+        // $newData = [
+        //     "EMPL_ID" => $request->empId,
+        //     "PRJ_UUID" => Uuid::uuid4(),
+        //     "PRJ_NUMBER" => IdGenerator::generate($idConfig),
+        // ];
+        return response($newData);
     }
 
     /**
