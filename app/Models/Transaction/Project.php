@@ -17,7 +17,6 @@ class Project extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "PRJ_ID",
         "EMPL_ID",
         "APPROVAL_ID",
         "TRANS_TY_ID",
@@ -42,18 +41,4 @@ class Project extends Model
         "PRJ_DELETE_REASON",
         "PRJ_DELETE_BY",
     ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [];
 }
