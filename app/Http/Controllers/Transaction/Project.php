@@ -25,10 +25,20 @@ class Project extends Controller
         //
         return response(TransactionProject::all());
     }
-    public function index_transDetail(string $uuid)
+    public function index_transByHeader(string $uuid)
     {
         //
-        $result = [];
+        return response(TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail());
+    }
+    public function modalEditData(string $uuid)
+    {
+        //
+        $result = [
+            "Header" => [],
+            "Detail" => [],
+        ];
+
+        $result['Header'] = TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail();
         /* CADV Loop */
         $cadv = TransactionProject::select(
             'tr_cash_advanced.APPROVAL_ID',
@@ -60,7 +70,7 @@ class Project extends Controller
                 'TRANSACTION_ATTACHMENT' => $valCadv->CADV_ATTACHMENT,
                 'TRANSACTION_STATUS' => $valCadv->STATUS,
             ];
-            array_push($result, $data);
+            array_push($result['Detail'], $data);
         }
 
         /* REIMB Loop */
@@ -94,9 +104,8 @@ class Project extends Controller
                 'TRANSACTION_ATTACHMENT' => $valReimb->REIMB_ATTACHMENT,
                 'TRANSACTION_STATUS' => $valReimb->STATUS,
             ];
-            array_push($result, $data);
+            array_push($result['Detail'], $data);
         }
-
 
         return response($result);
     }
@@ -115,8 +124,8 @@ class Project extends Controller
         $idConfig = [
             'table' => 'tr_project_request',
             'field' => 'PRJ_NUMBER',
-            'length' => 17,
-            'prefix' => $comp->COMP_CODE . '/' . $dept->DEPT_CODE . '/' . date('Ym')
+            'length' => 16,
+            'prefix' => $comp->COMP_CODE . '/' . $dept->DEPT_CODE . '/' . date('Ym') . '/'
         ];
         $newData = TransactionProject::create([
             // "TRANS_TY_ID" => '',
