@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Master\TransactionType;
 use App\Http\Controllers\Transaction\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,14 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:api')->group(function () {
+    Route::prefix('master')->group(function () {
+        Route::prefix('transtype')->group(function () {
+            Route::get('/projectType/{id}', [TransactionType::class, 'show_projectType']);
+            Route::get('/projectSubType/{id}', [TransactionType::class, 'show_projectSubType']);
+            Route::get('/projectSubDtType/{id}', [TransactionType::class, 'show_projectSubDtType']);
+        });
+    });
+
     Route::prefix('transaction')->group(function () {
         Route::prefix('project')->group(function () {
             Route::apiResource('/', Project::class);
