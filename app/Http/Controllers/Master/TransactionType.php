@@ -47,6 +47,13 @@ class TransactionType extends Controller
         $transMType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('SUB_TRANS_TY_ID', $id)->get();
         foreach ($transMType as $keyMType => $valMType) {
             $transSbType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('SUB_TRANS_TY_ID', $valMType->TRANS_TY_ID)->get();
+            if (count($transSbType) <= 0) {
+                $res = [
+                    "value" => $valMType->TRANS_TY_ID,
+                    "label" => $valMType->TRANS_TY_NAME
+                ];
+                array_push($result, $res);
+            }
             foreach ($transSbType as $keySbType => $valSbType) {
                 $res = [
                     "value" => $valSbType->TRANS_TY_ID,

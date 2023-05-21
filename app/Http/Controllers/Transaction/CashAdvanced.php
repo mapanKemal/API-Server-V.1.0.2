@@ -18,9 +18,10 @@ class CashAdvanced extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create_fromProject(array $data = [])
     {
         //
+        return response()->json("data created");
     }
 
     /**

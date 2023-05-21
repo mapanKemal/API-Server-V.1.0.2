@@ -12,6 +12,7 @@ use Ramsey\Uuid\Uuid;
 
 class Project extends Controller
 {
+    protected $advance_transTyId = 2, $reimburse_transTyId = 9, $general_transTyId = 16;
     /**
      * Display a listing of the resource.
      */
@@ -117,6 +118,13 @@ class Project extends Controller
     {
         //
     }
+    public function create_detail()
+    {
+        //->create_data();
+        // $create_advanced = new CashAdvanced;
+        // return $create_advanced->create_fromProject();
+    }
+
     public function create_header(Request $request)
     {
         $dept = Departement::where('DEPT_ID', $request->deptId)->first();
