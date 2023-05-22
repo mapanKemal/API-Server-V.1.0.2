@@ -106,9 +106,13 @@ class UserAuthentication extends Controller
                 'ms_employee.EMPL_CONFIG',
                 'fr_emp_position.COMP_ID',
                 'fr_emp_position.DEPT_ID',
+                'ms_departement.DEPT_CODE',
+                'ms_company.COMP_CODE',
             )
                 ->leftJoin('ms_employee', 'ms_employee.USER_ID', '=', 'ms_users.USER_ID')
                 ->leftJoin('fr_emp_position', 'fr_emp_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+                ->leftJoin('ms_departement', 'ms_departement.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')
+                ->leftJoin('ms_company', 'ms_company.COMP_ID', '=', 'fr_emp_position.COMP_ID')
                 ->where([['ms_users.USERNAME', '=', $request->username], ['ms_users.STATUS', '=', 100]])
                 ->firstOrFail();
 

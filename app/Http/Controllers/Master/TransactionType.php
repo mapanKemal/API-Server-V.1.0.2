@@ -56,7 +56,7 @@ class TransactionType extends Controller
             }
             foreach ($transSbType as $keySbType => $valSbType) {
                 $res = [
-                    "value" => $valSbType->TRANS_TY_ID,
+                    "value" => $valMType->TRANS_TY_ID . '_' . $valSbType->TRANS_TY_ID,
                     "label" => $valMType->TRANS_TY_NAME . ' [' . $valSbType->TRANS_TY_NAME . ']'
                 ];
                 array_push($result, $res);

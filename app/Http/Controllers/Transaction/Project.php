@@ -8,6 +8,7 @@ use App\Models\Master\Departement;
 use App\Models\Transaction\Project as TransactionProject;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
 
 class Project extends Controller
@@ -118,11 +119,59 @@ class Project extends Controller
     {
         //
     }
-    public function create_detail()
+    public function create_detail(Request $request)
     {
-        //->create_data();
-        // $create_advanced = new CashAdvanced;
-        // return $create_advanced->create_fromProject();
+        /* Input Validation */
+        $validateData = Validator::make(
+            $request->all(),
+            [
+                'primaryGroup' => 'required',
+            ]
+        );
+        if ($validateData->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data Validation Error',
+                'errors' => $validateData->errors()
+            ]);
+        }
+
+        /* Explode Grouping ID */
+        $tyCode = explode("_", $request->primaryGroup);
+        $tyCompare = $tyCode[array_key_first($tyCode)];
+        $tyId = $tyCode[array_key_last($tyCode)];
+        if ($request->secondaryGroup != null) {
+            $tyId = $request->secondaryGroup;
+        }
+
+        if ($tyCompare == $this->advance_transTyId) {
+            /* If Transaction Is CASH ADVANCED */
+            $advanced = new CashAdvanced;
+            $createTrans = $advanced->create_fromProject([
+                "EMPL_ID" => $request->emplId,
+                "TRANS_TY_ID" => $tyId,
+                "DT_TRANS_TY_ID" => $request->detailingGroup,
+                "PRJ_ID" => $request->projectId,
+                "CADV_SUBJECT" => $request->trans_subject,
+                "CADV_NOTES" => $request->trans_Notes,
+                "CADV_AMOUNT" => $request->trans_Amount,
+                "CADV_DUE_DATE" => $request->trans_DueDate,
+                "CADV_ATTACHMENT" => null,
+                "CADV_ATTACHMENT_SIZE" => 0,
+            ], [
+                "COMP_CODE" => $request->compCode,
+                "DEPT_CODE" => $request->deptCode,
+            ]);
+        } elseif ($tyCompare == $this->reimburse_transTyId) {
+            /* If Transaction Is REIMBURSEMENT */
+        }
+
+        /* Set Update Project Amount */
+        $_Project = TransactionProject::find($request->projectId);
+        $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->trans_Amount;
+        $_Project->save();
+
+        return response($_Project);
     }
 
     public function create_header(Request $request)

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
+use App\Models\Transaction\CashAdvanced as TransactionCashAdvanced;
+use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Http\Request;
+use Ramsey\Uuid\Uuid;
 
 class CashAdvanced extends Controller
 {
@@ -18,10 +21,20 @@ class CashAdvanced extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create_fromProject(array $data = [])
+    public function create_fromProject($createCad, $other = [])
     {
         //
-        return response()->json("data created");
+        $idConfig = [
+            'table' => 'tr_cash_advanced',
+            'field' => 'CADV_NUMBER',
+            'length' => 21,
+            'prefix' =>  'CAD/' . $other['COMP_CODE'] . '/' . $other['DEPT_CODE'] . '/' . date('Ym') . '/'
+        ];
+        $createCad["CADV_UUID"] = Uuid::uuid4();
+        $createCad["CADV_NUMBER"] = IdGenerator::generate($idConfig);
+        $_createTransaction = TransactionCashAdvanced::create($createCad);
+
+        return $_createTransaction;
     }
 
     /**
