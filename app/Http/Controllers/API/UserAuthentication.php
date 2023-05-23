@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\StructureEmpPos;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +92,8 @@ class UserAuthentication extends Controller
                     'message' => 'Username & Password does not match with our record.',
                 ], 401);
             }
+
+            $result = [];
             $user = User::select(
                 'ms_users.USER_ID',
                 'ms_users.UUID',
@@ -104,15 +107,15 @@ class UserAuthentication extends Controller
                 'ms_employee.EMPL_GENDER',
                 'ms_employee.STATUS',
                 'ms_employee.EMPL_CONFIG',
-                'fr_emp_position.COMP_ID',
-                'fr_emp_position.DEPT_ID',
-                'ms_departement.DEPT_CODE',
-                'ms_company.COMP_CODE',
+                // 'fr_emp_position.COMP_ID',
+                // 'fr_emp_position.DEPT_ID',
+                // 'ms_departement.DEPT_CODE',
+                // 'ms_company.COMP_CODE',
             )
                 ->leftJoin('ms_employee', 'ms_employee.USER_ID', '=', 'ms_users.USER_ID')
-                ->leftJoin('fr_emp_position', 'fr_emp_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
-                ->leftJoin('ms_departement', 'ms_departement.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')
-                ->leftJoin('ms_company', 'ms_company.COMP_ID', '=', 'fr_emp_position.COMP_ID')
+                // ->leftJoin('fr_emp_position', 'fr_emp_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+                // ->leftJoin('ms_departement', 'ms_departement.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')
+                // ->leftJoin('ms_company', 'ms_company.COMP_ID', '=', 'fr_emp_position.COMP_ID')
                 ->where([['ms_users.USERNAME', '=', $request->username], ['ms_users.STATUS', '=', 100]])
                 ->firstOrFail();
 
@@ -125,18 +128,47 @@ class UserAuthentication extends Controller
             }
             $user->LAST_LOGIN_AT = $request->lastLogin == null ? now() : $request->lastLogin;
             $user->save();
+            /* Set User Data */
+            $result = [
+                "UUID" => $user->UUID,
+                "ALIASES" => $user->ALIASES,
+                "USER_ID" => $user->USER_ID,
+                "EMPL_ID" => $user->EMPL_ID,
+                "EMPL_NUMBER" => $user->EMPL_NUMBER,
+                "EMPL_UNIQUE_CODE" => $user->EMPL_UNIQUE_CODE,
+                "EMPL_FIRSTNAME" => $user->EMPL_FIRSTNAME,
+                "EMPL_LASTNAME" => $user->EMPL_LASTNAME,
+                "EMPL_GENDER" => $user->EMPL_GENDER,
+                "EMPL_DEFAULT_CMP" => null,
+                "EMPL_DEFAULT_DPT" => null,
+                "STATUS" => $user->STATUS,
+                "EMPL_CONFIG" => $user->EMPL_CONFIG,
+                "LAST_LOGIN_AT" => $user->LAST_LOGIN_AT,
+            ];
+            /* Set User Structure */
+            $userStructure_dep = StructureEmpPos::select(
+                "fr_emp_position.FR_POST_ID",
+                "fr_emp_position.COMP_ID",
+                "CMP.COMP_CODE",
+                "fr_emp_position.DEPT_ID",
+                "DPT.DEPT_CODE",
+            )
+                ->where("EMPL_ID", $user->EMPL_ID)
+                ->join('ms_departement as DPT', 'DPT.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')
+                ->join('ms_company as CMP', 'CMP.COMP_ID', '=', 'fr_emp_position.COMP_ID')
+                ->get();
+            $result['EMP_STRUCTURE'] = $userStructure_dep;
 
             $userToken = $user->createToken('authToken');
             $tokenId = $userToken->token->id;
             $accessToken = $userToken->accessToken;
-
             /* And Then */
             return response()->json([
                 'status' => true,
                 'message' => 'User Logged In Successfully',
                 'token_id' => $tokenId,
                 'access_token' => $accessToken,
-                'user'  => $user
+                'user'  => $result
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
