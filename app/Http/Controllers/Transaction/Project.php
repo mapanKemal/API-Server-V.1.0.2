@@ -126,6 +126,34 @@ class Project extends Controller
     {
         //
     }
+
+    public function create_header(Request $request)
+    {
+        $idConfig = [
+            'table' => 'tr_project_request',
+            'field' => 'PRJ_NUMBER',
+            'length' => 12,
+            'prefix' => date('Ym') . '/',
+            'reset_on_prefix_change' => true
+        ];
+        if ($request->compCode && $request->deptCode) {
+            $idConfig = [
+                'table' => 'tr_project_request',
+                'field' => 'PRJ_NUMBER',
+                'length' => 16,
+                'prefix' => $request->compCode . '/' . $request->deptCode . '/' . date('Ym') . '/',
+                'reset_on_prefix_change' => true
+            ];
+        }
+        $newData = TransactionProject::create([
+            "PRJ_NUMBER" => IdGenerator::generate($idConfig),
+            "EMPL_ID" => $request->emplId,
+            "PRJ_UUID" => Uuid::uuid4(),
+        ]);
+
+        return response($newData);
+    }
+
     public function create_detail(Request $request)
     {
         /* Input Validation */
@@ -181,64 +209,23 @@ class Project extends Controller
         return response($_Project);
     }
 
-    public function create_header(Request $request)
-    {
-        $dept = Departement::where('DEPT_ID', $request->deptId)->first();
-        $comp = Company::where('COMP_ID', $request->compId)->first();
-        $idConfig = [
-            'table' => 'tr_project_request',
-            'field' => 'PRJ_NUMBER',
-            'length' => 16,
-            'prefix' => $comp->COMP_CODE . '/' . $dept->DEPT_CODE . '/' . date('Ym') . '/'
-        ];
-        $newData = TransactionProject::create([
-            // "TRANS_TY_ID" => '',
-            // "DT_TRANS_TY_ID" => '',
-            "EMPL_ID" => $request->emplId,
-            "PRJ_UUID" => Uuid::uuid4(),
-            "PRJ_NUMBER" => IdGenerator::generate($idConfig),
-            "PRJ_SUBJECT" => '',
-            "PRJ_NOTES" => '',
-            "PRJ_ATTTACHMENT" => '',
-        ]);
-        // $newData = [
-        //     "EMPL_ID" => $request->empId,
-        //     "PRJ_UUID" => Uuid::uuid4(),
-        //     "PRJ_NUMBER" => IdGenerator::generate($idConfig),
-        // ];
-        return response($newData);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update_header(Request $request, string $uuid)
     {
-        //
+        $idConfig = [
+            'table' => 'tr_project_request',
+            'field' => 'PRJ_NUMBER',
+            'length' => 17,
+            'prefix' => $request->compCode . '/' . $request->deptCode . '/' . date('Ym') . '/',
+            'reset_on_prefix_change' => true
+        ];
+        $getProject = TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail();
+        $getProject->PRJ_NUMBER = IdGenerator::generate($idConfig);
+        $getProject->save();
+
+        return response($getProject);
     }
 
     /**

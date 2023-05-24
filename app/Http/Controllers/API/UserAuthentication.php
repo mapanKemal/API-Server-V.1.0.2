@@ -150,8 +150,10 @@ class UserAuthentication extends Controller
                 "fr_emp_position.FR_POST_ID",
                 "fr_emp_position.COMP_ID",
                 "CMP.COMP_CODE",
+                "CMP.COMP_NAME",
                 "fr_emp_position.DEPT_ID",
                 "DPT.DEPT_CODE",
+                "DPT.DEPT_NAME",
             )
                 ->where("EMPL_ID", $user->EMPL_ID)
                 ->join('ms_departement as DPT', 'DPT.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')

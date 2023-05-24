@@ -49,6 +49,7 @@ Route::middleware('auth:api')->group(function () {
             // Route::get('/transByHeader/{uuid}', [Project::class, 'index_transByHeader']);
             Route::get('/EditData/{uuid}', [Project::class, 'modalEditData']);
             Route::post('/createHeader', [Project::class, 'create_header']);
+            Route::post('/updateHeader/{uuid}', [Project::class, 'update_header']);
             Route::post('/createDetail', [Project::class, 'create_detail']);
         });
     });
