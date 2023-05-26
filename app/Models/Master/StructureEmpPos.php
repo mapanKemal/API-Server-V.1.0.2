@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class StructureEmpPos extends Model
 {
     use HasFactory;
-    protected $table = 'fr_emp_position';
+    protected $table = 'fr_employee_position';
     protected $primaryKey = 'FR_POST_ID';
 
     protected $fillable = [

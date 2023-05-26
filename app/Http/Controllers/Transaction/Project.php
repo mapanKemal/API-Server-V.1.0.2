@@ -30,7 +30,7 @@ class Project extends Controller
     public function index_transByHeader(string $uuid)
     {
         //
-        return response(TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail());
+        return response(TransactionProject::where('UUID', $uuid)->firstOrFail());
     }
     public function modalEditData(string $uuid)
     {
@@ -40,14 +40,14 @@ class Project extends Controller
             "Detail" => [],
         ];
 
-        $result['Header'] = TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail();
+        $result['Header'] = TransactionProject::where('UUID', $uuid)->firstOrFail();
         /* CADV Loop */
         $cadv = TransactionProject::select(
             'tr_cash_advanced.APPROVAL_ID',
             'tr_cash_advanced.APPROVAL_CODE_ID',
             'tr_cash_advanced.TRANS_TY_ID',
             'tr_cash_advanced.CADV_ID',
-            'tr_cash_advanced.CADV_UUID',
+            'tr_cash_advanced.UUID',
             'tr_cash_advanced.CADV_NUMBER',
             'tr_cash_advanced.CADV_SUBJECT',
             'tr_cash_advanced.CADV_NOTES',
@@ -88,7 +88,7 @@ class Project extends Controller
             'tr_reimbursement.APPROVAL_CODE_ID',
             'tr_reimbursement.TRANS_TY_ID',
             'tr_reimbursement.REIMB_ID',
-            'tr_reimbursement.REIMB_UUID',
+            'tr_reimbursement.UUID',
             'tr_reimbursement.REIMB_NUMBER',
             'tr_reimbursement.REIMB_SUBJECT',
             'tr_reimbursement.REIMB_NOTES',
@@ -148,7 +148,6 @@ class Project extends Controller
         $newData = TransactionProject::create([
             "PRJ_NUMBER" => IdGenerator::generate($idConfig),
             "EMPL_ID" => $request->emplId,
-            "PRJ_UUID" => Uuid::uuid4(),
         ]);
 
         return response($newData);
