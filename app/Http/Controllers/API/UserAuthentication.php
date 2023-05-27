@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Master\StructureEmpPos;
+use App\Models\Master\EmployeePosition;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -146,7 +146,7 @@ class UserAuthentication extends Controller
                 "LAST_LOGIN_AT" => $user->LAST_LOGIN_AT,
             ];
             /* Set User Structure */
-            $userStructure_dep = StructureEmpPos::select(
+            $userStructure_dep = EmployeePosition::select(
                 "fr_employee_position.FR_POST_ID",
                 "fr_employee_position.COMP_ID",
                 "CMP.COMP_CODE",

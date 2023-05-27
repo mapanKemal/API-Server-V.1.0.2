@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Master\DetailTransactionType;
+use App\Models\Master\Detail_TransactionType;
 use App\Models\Master\TransactionType as MasterTransactionType;
 use Illuminate\Http\Request;
 
@@ -82,7 +82,7 @@ class TransactionType extends Controller
     {
         //
         $result = [];
-        $dt_transMtSubType = DetailTransactionType::select('DT_TRANS_TY_ID', 'DT_TRANS_TY_NAME')->where('TRANS_TY_ID', $id)->get();
+        $dt_transMtSubType = Detail_TransactionType::select('DT_TRANS_TY_ID', 'DT_TRANS_TY_NAME')->where('TRANS_TY_ID', $id)->get();
         foreach ($dt_transMtSubType as $keyMtSubType => $valMtSubType) {
             $res = [
                 "value" => $valMtSubType->DT_TRANS_TY_ID,

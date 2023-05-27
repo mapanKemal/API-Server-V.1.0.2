@@ -5,7 +5,7 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class StructureEmpPos extends Model
+class EmployeePosition extends Model
 {
     use HasFactory;
     protected $table = 'fr_employee_position';
