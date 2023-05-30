@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use Ramsey\Uuid\Uuid;
@@ -27,7 +28,7 @@ class UserAuthentication extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'identity' => 'required'
+                    'identity' => ['required', Rule::unique('ms_users', 'USERNAME'), 'min:2']
                 ]
             );
 
@@ -114,14 +115,14 @@ class UserAuthentication extends Controller
                 'ms_employee.EMPL_CONFIG',
             )
                 ->leftJoin('ms_employee', 'ms_employee.USER_ID', '=', 'ms_users.USER_ID')
-                ->where([['ms_users.USERNAME', $request->identity], ['ms_users.STATUS', 100]])
+                ->where([['ms_users.USERNAME', $request->identity], ['ms_users.STATUS', 'in', [100, 0]]])
                 ->first();
 
             /* Last Login Update */
             if (is_null($user)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot find data employee active',
+                    'message' => 'Employee not found or not active, please contact Administrator',
                 ], 400);
             }
             $user->LAST_LOGIN_AT = $request->lastLogin == null ? now() : $request->lastLogin;
@@ -130,7 +131,6 @@ class UserAuthentication extends Controller
             $result = [
                 "UUID" => $user->UUID,
                 "ALIASES" => $user->ALIASES,
-                "USER_ID" => $user->USER_ID,
                 "EMPL_ID" => $user->EMPL_ID,
                 "EMPL_NUMBER" => $user->EMPL_NUMBER,
                 "EMPL_UNIQUE_CODE" => $user->EMPL_UNIQUE_CODE,
