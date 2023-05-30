@@ -27,32 +27,37 @@ class UserAuthentication extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'username' => 'required',
-                    'password' => 'required'
+                    'identity' => 'required'
                 ]
             );
 
             if ($validateUser->fails()) {
-                return response()->json([
+                return response([
                     'status' => false,
-                    'message' => 'validation error',
+                    'message' => 'User Validation Error',
                     'errors' => $validateUser->errors()
                 ], 401);
             }
 
             $user = User::create([
                 'ALIASES' => $request->alias,
-                'USERNAME' => $request->username,
-                'PASSWORD' => Hash::make($request->password),
-                'UUID' => Uuid::uuid4()
+                'USERNAME' => $request->identity,
+                'PASSWORD' => Hash::make($request->identity)
             ]);
-            $access_token = $user->createToken('authToken')->accessToken;
+
+            $userToken = $user->createToken('authToken');
+            $tokenId = $userToken->token->id;
+            $accessToken = $userToken->accessToken;
 
             return response()->json([
                 'status' => true,
                 'message' => 'User Created Successfully',
-                'access_token' => $access_token,
-                'user'  => $user
+                'user'  => [
+                    'USER_ID' => $user->UUID,
+                    'USER_ALIASES' => $user->ALIASES
+                ],
+                'access_token' => $accessToken,
+                'token_id' => $tokenId,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -69,24 +74,24 @@ class UserAuthentication extends Controller
      */
     public function login(Request $request)
     {
+        // 'username' => 'required',
         try {
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'username' => 'required',
-                    'password' => 'required'
+                    'identity' => 'required'
                 ]
             );
 
             if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'validation error',
+                    'message' => 'User Validation Error',
                     'errors' => $validateUser->errors()
                 ], 401);
             }
 
-            if (!Auth::attempt($request->only(['username', 'password']))) {
+            if (!Auth::attempt(['username' => $request->identity, 'password' => $request->identity])) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Username & Password does not match with our record.',
@@ -107,23 +112,16 @@ class UserAuthentication extends Controller
                 'ms_employee.EMPL_GENDER',
                 'ms_employee.STATUS',
                 'ms_employee.EMPL_CONFIG',
-                // 'fr_emp_position.COMP_ID',
-                // 'fr_emp_position.DEPT_ID',
-                // 'ms_departement.DEPT_CODE',
-                // 'ms_company.COMP_CODE',
             )
                 ->leftJoin('ms_employee', 'ms_employee.USER_ID', '=', 'ms_users.USER_ID')
-                // ->leftJoin('fr_emp_position', 'fr_emp_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
-                // ->leftJoin('ms_departement', 'ms_departement.DEPT_ID', '=', 'fr_emp_position.DEPT_ID')
-                // ->leftJoin('ms_company', 'ms_company.COMP_ID', '=', 'fr_emp_position.COMP_ID')
-                ->where([['ms_users.USERNAME', '=', $request->username], ['ms_users.STATUS', '=', 100]])
-                ->firstOrFail();
+                ->where([['ms_users.USERNAME', $request->identity], ['ms_users.STATUS', 100]])
+                ->first();
 
             /* Last Login Update */
             if (is_null($user)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Username & Password does not match with our record.',
+                    'message' => 'Cannot find data employee active',
                 ], 400);
             }
             $user->LAST_LOGIN_AT = $request->lastLogin == null ? now() : $request->lastLogin;
