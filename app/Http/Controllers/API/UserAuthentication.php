@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
-use Ramsey\Uuid\Uuid;
 
 class UserAuthentication extends Controller
 {
@@ -115,7 +114,8 @@ class UserAuthentication extends Controller
                 'ms_employee.EMPL_CONFIG',
             )
                 ->leftJoin('ms_employee', 'ms_employee.USER_ID', '=', 'ms_users.USER_ID')
-                ->where([['ms_users.USERNAME', $request->identity], ['ms_users.STATUS', 'in', [100, 0]]])
+                ->where([['ms_users.USERNAME', $request->identity]])
+                ->whereIn('ms_users.STATUS', [0, 100])
                 ->first();
 
             /* Last Login Update */
@@ -130,12 +130,12 @@ class UserAuthentication extends Controller
             /* Set User Data */
             $result = [
                 "UUID" => $user->UUID,
-                "ALIASES" => $user->ALIASES,
+                "ALIASES" => ucfirst($user->ALIASES),
                 "EMPL_ID" => $user->EMPL_ID,
                 "EMPL_NUMBER" => $user->EMPL_NUMBER,
                 "EMPL_UNIQUE_CODE" => $user->EMPL_UNIQUE_CODE,
-                "EMPL_FIRSTNAME" => $user->EMPL_FIRSTNAME,
-                "EMPL_LASTNAME" => $user->EMPL_LASTNAME,
+                "EMPL_FIRSTNAME" => ucfirst($user->EMPL_FIRSTNAME),
+                "EMPL_LASTNAME" => ucfirst($user->EMPL_LASTNAME),
                 "EMPL_GENDER" => $user->EMPL_GENDER,
                 "EMPL_DEFAULT_CMP" => null,
                 "EMPL_DEFAULT_DPT" => null,
