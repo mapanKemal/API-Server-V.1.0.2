@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Master\Setup_Company;
 use App\Http\Controllers\Master\TransactionType;
 use App\Http\Controllers\Transaction\Project;
 use Illuminate\Http\Request;
@@ -35,6 +36,17 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:api')->group(function () {
     Route::prefix('master')->group(function () {
+        /* Company Setup */
+        Route::prefix('company')->group(function () {
+            Route::get('/index', [Setup_Company::class, 'index_Company']);
+            Route::post('/create', [Setup_Company::class, 'create_Company']);
+        });
+        Route::prefix('departement')->group(function () {
+            Route::get('/index', [Setup_Company::class, 'index_Departement']);
+            Route::post('/create', [Setup_Company::class, 'create_Departement']);
+        });
+
+        /* Other */
         Route::prefix('transtype')->group(function () {
             Route::get('/projectType/{id}', [TransactionType::class, 'show_projectType']);
             Route::get('/projectSubType/{id}', [TransactionType::class, 'show_projectSubType']);

@@ -15,4 +15,6 @@ class Departement extends Model
         "DEPT_CODE",
         "DEPT_NAME",
     ];
+
+    public $timestamps = false;
 }

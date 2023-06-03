@@ -15,4 +15,6 @@ class Company extends Model
         "COMP_CODE",
         "COMP_NAME",
     ];
+
+    public $timestamps = false;
 }
