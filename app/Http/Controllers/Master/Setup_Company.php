@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Models\Master\Company;
 use App\Models\Master\Departement;
+use App\Models\Master\JobPosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -119,6 +120,8 @@ class Setup_Company extends Controller
     /* Job Position Setup */
     public function index_JobPosition()
     {
+        $post = JobPosition::where('STATUS', 0)->get();
+        return response($post);
     }
     public function create_JobPosition()
     {

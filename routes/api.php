@@ -45,6 +45,10 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/index', [Setup_Company::class, 'index_Departement']);
             Route::post('/create', [Setup_Company::class, 'create_Departement']);
         });
+        Route::prefix('position')->group(function () {
+            Route::get('/index', [Setup_Company::class, 'index_JobPosition']);
+            Route::post('/create', [Setup_Company::class, 'create_JobPosition']);
+        });
 
         /* Other */
         Route::prefix('transtype')->group(function () {
