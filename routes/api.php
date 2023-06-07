@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Master\Employee;
 use App\Http\Controllers\Master\Setup_Company;
 use App\Http\Controllers\Master\TransactionType;
 use App\Http\Controllers\Transaction\Project;
@@ -48,6 +49,12 @@ Route::middleware('auth:api')->group(function () {
         Route::prefix('position')->group(function () {
             Route::get('/index', [Setup_Company::class, 'index_JobPosition']);
             Route::post('/create', [Setup_Company::class, 'create_JobPosition']);
+        });
+
+        /* Employee */
+        Route::prefix('employee')->group(function () {
+            Route::get('/index', [Employee::class, 'index_Employee']);
+            Route::post('/create', [Employee::class, 'create_Employee']);
         });
 
         /* Other */

@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\Route;
 //     return ['Laravel' => app()->version()];
 // });
 Route::get('/', function () {
-    return response([['Laravel' => app()->version()], ['Time' => date('Y M d, H:i:s')]]);
+    return response([
+        '[Default] Indonesian-Time' => date('Y M d, H:i:s'),
+        '[App_Version]' => "",
+    ]);
 });
 
 require __DIR__ . '/auth.php';
