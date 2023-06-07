@@ -55,7 +55,7 @@ jobs:
     - name: Generate key
       run: |
         php artisan key:generate
-        php artisan passport:generate
+        php artisan passport:install
       
     - name: Create Database
       run: |
