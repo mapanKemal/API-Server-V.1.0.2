@@ -33,16 +33,6 @@ jobs:
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
       
-    - name: Install composer dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --optimize-autoloader --no-dev
-      
-    - name: Laravel Preparation
-      run: |
-        php artisan config:cache
-        php artisan event:cache
-        php artisan route:cache
-        php artisan view:cache
-
     - name: Prepare .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
       env: 
@@ -51,6 +41,16 @@ jobs:
         DB_DATABASE: "20230607_mapan_group"
         DB_USERNAME: "win_root"
         DB_PASSWORD: "adminMapan58@"
+    
+    - name: Install composer dependencies
+      run: composer install --prefer-dist --optimize-autoloader --no-dev
+      
+    - name: Laravel Preparation
+      run: |
+        php artisan config:cache
+        php artisan event:cache
+        php artisan route:cache
+        php artisan view:cache
         
     - name: Generate key
       run: |
