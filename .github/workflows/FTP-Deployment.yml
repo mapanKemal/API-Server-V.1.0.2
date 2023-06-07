@@ -43,7 +43,7 @@ jobs:
         DB_PASSWORD: "adminMapan58@"
     
     - name: Install composer dependencies
-      run: composer install --prefer-dist --optimize-autoloader --no-dev
+      run: composer install --optimize-autoloader --no-dev
       
     - name: Laravel Preparation
       run: |
