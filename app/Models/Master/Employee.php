@@ -21,4 +21,6 @@ class Employee extends Model
         "STATUS",
         "EMPL_CONFIG",
     ];
+
+    public $timestamps = false;
 }

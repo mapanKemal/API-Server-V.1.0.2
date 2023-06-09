@@ -41,14 +41,17 @@ Route::middleware('auth:api')->group(function () {
         Route::prefix('company')->group(function () {
             Route::get('/index', [Setup_Company::class, 'index_Company']);
             Route::post('/create', [Setup_Company::class, 'create_Company']);
+            Route::get('/select/option', [Setup_Company::class, 'option_Company']);
         });
         Route::prefix('departement')->group(function () {
             Route::get('/index', [Setup_Company::class, 'index_Departement']);
             Route::post('/create', [Setup_Company::class, 'create_Departement']);
+            Route::get('/select/option', [Setup_Company::class, 'option_Departement']);
         });
         Route::prefix('position')->group(function () {
             Route::get('/index', [Setup_Company::class, 'index_JobPosition']);
             Route::post('/create', [Setup_Company::class, 'create_JobPosition']);
+            Route::get('/select/option', [Setup_Company::class, 'option_JobPosition']);
         });
 
         /* Employee */

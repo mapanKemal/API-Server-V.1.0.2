@@ -12,19 +12,18 @@ class EmployeePosition extends Model
     protected $primaryKey = 'FR_POST_ID';
 
     protected $fillable = [
+        "USER_ID",
         "EMPL_ID",
         "COMP_ID",
         "DEPT_ID",
-        "STRUCTURE_CODE",
-        "USER_ID",
         "POST_ID",
-        "STRUCTURE_NUMBERING",
         "ACCP_LOWER",
         "ACCP_LOWER_AMOUNT",
         "ACCP_UPPER",
         "ACCP_UPPER_AMOUNT",
         "START_DATE",
         "END_DATE",
-        "STATUS",
+        "ON_STRUCTURE",
+        "ACTIVE",
     ];
 }

@@ -63,6 +63,19 @@ class Setup_Company extends Controller
     public function delete_Company()
     {
     }
+    public function option_Company()
+    {
+        $result = [];
+        $comp = Company::where('STATUS', 0)->get();
+        foreach ($comp as $keyComp => $valComp) {
+            $res = [
+                "value" => $valComp->COMP_ID,
+                "label" => "[" . $valComp->COMP_CODE . "] " . $valComp->COMP_NAME,
+            ];
+            array_push($result, $res);
+        }
+        return response($result);
+    }
     /* Company Setup */
 
     /* Departement Setup */
@@ -115,6 +128,19 @@ class Setup_Company extends Controller
     public function delete_Departement()
     {
     }
+    public function option_Departement()
+    {
+        $result = [];
+        $dept = Departement::where('STATUS', 0)->get();
+        foreach ($dept as $keyDept => $valDept) {
+            $res = [
+                "value" => $valDept->DEPT_ID,
+                "label" => "[" . $valDept->DEPT_CODE . "] " . $valDept->DEPT_NAME,
+            ];
+            array_push($result, $res);
+        }
+        return response($result);
+    }
     /* Departement Setup */
 
     /* Job Position Setup */
@@ -131,6 +157,19 @@ class Setup_Company extends Controller
     }
     public function delete_JobPosition()
     {
+    }
+    public function option_JobPosition()
+    {
+        $result = [];
+        $post = JobPosition::where('STATUS', 0)->get();
+        foreach ($post as $keyPost => $valPost) {
+            $res = [
+                "value" => $valPost->POST_ID,
+                "label" => $valPost->POST_NAME,
+            ];
+            array_push($result, $res);
+        }
+        return response($result);
     }
     /* Job Position Setup */
 }
