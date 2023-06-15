@@ -46,52 +46,50 @@ class Employee extends Controller
         }
 
         try {
-            DB::beginTransaction();
-            /* Create User  */
-            $user = User::create([
-                "ALIASES" => $request->aliases,
-                "USERNAME" => $request->username,
-                "PASSWORD" => Hash::make($request->password),
-                "EMAIL" => $request->email,
-            ]);
-            /* Create Employee  */
-            $empNumbConf = [
-                'table' => 'ms_employee',
-                'field' => 'EMPL_NUMBER',
-                'length' => 16,
-                'prefix' =>  "EMPL-" . date("Ymd"),
-                'reset_on_prefix_change' => true,
+            // DB::beginTransaction();
+            DB::transaction(function () use ($request) {
+                /* Create User  */
+                $user = User::create([
+                    "ALIASES" => $request->aliases,
+                    "USERNAME" => $request->username,
+                    "PASSWORD" => Hash::make($request->password),
+                    "EMAIL" => $request->email,
+                ]);
+                /* Create Employee  */
+                $empNumbConf = [
+                    'table' => 'ms_employee',
+                    'field' => 'EMPL_NUMBER',
+                    'length' => 16,
+                    'prefix' =>  "EMPL-" . date("Ymd"),
+                    'reset_on_prefix_change' => true,
 
-            ];
-            $empNumber = IdGenerator::generate($empNumbConf);
-            $employee = MasterEmployee::create([
-                "EMPL_NUMBER" => $empNumber,
-                "USER_ID" => $user->USER_ID,
-                "EMPL_UNIQUE_CODE" => $request->eployeeNumber,
-                "EMPL_FIRSTNAME" => $request->firstName,
-                "EMPL_LASTNAME" => $request->lastName,
-                "EMPL_GENDER" => $request->gender
-            ]);
-            /* Create FR-Employee  */
-            $employeePosition = EmployeePosition::create([
-                "USER_ID" => $user->USER_ID,
-                "EMPL_ID" => $employee->EMPL_ID,
-                "COMP_ID" => $request->company,
-                "DEPT_ID" => $request->departement,
-                "POST_ID" => $request->position,
-                "ACCP_LOWER" => 0,
-                "ACCP_LOWER_AMOUNT" => 0,
-                "ACCP_UPPER" => 0,
-                "ACCP_UPPER_AMOUNT" => 0,
-                "ON_STRUCTURE" => 0,
-            ]);
+                ];
+                $empNumber = IdGenerator::generate($empNumbConf);
+                $employee = MasterEmployee::create([
+                    "EMPL_NUMBER" => $empNumber,
+                    "USER_ID" => $user->USER_ID,
+                    "EMPL_UNIQUE_CODE" => $request->eployeeNumber,
+                    "EMPL_FIRSTNAME" => $request->firstName,
+                    "EMPL_LASTNAME" => $request->lastName,
+                    "EMPL_GENDER" => $request->gender
+                ]);
+                /* Create FR-Employee  */
+                $employeePosition = EmployeePosition::create([
+                    "USER_ID" => $user->USER_ID,
+                    "EMPL_ID" => $employee->EMPL_ID,
+                    "COMP_ID" => $request->company,
+                    "DEPT_ID" => $request->departement,
+                    "POST_ID" => $request->position,
+                    "ACCP_LOWER" => 0,
+                    "ACCP_LOWER_AMOUNT" => 0,
+                    "ACCP_UPPER" => 0,
+                    "ACCP_UPPER_AMOUNT" => 0,
+                    "ON_STRUCTURE" => 0,
+                ]);
 
-            /* Return Response on success */
-            return response([
-                "user" => $user,
-                "employee" => $employee,
-                "position" => $employeePosition,
-            ], 200);
+                /* Return Response on success */
+                return response([], 200);
+            });
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
