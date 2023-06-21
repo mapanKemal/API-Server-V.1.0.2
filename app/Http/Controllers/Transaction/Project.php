@@ -132,25 +132,36 @@ class Project extends Controller
         $idConfig = [
             'table' => 'tr_project_request',
             'field' => 'PRJ_NUMBER',
-            'length' => 12,
+            'length' => 11,
             'prefix' => date('Ym') . '/',
             'reset_on_prefix_change' => true
         ];
-        if ($request->compCode && $request->deptCode) {
+        if ($request->dept['compCode'] !== null && $request->dept['deptCode'] !== null) {
             $idConfig = [
                 'table' => 'tr_project_request',
                 'field' => 'PRJ_NUMBER',
-                'length' => 16,
-                'prefix' => $request->compCode . '/' . $request->deptCode . '/' . date('Ym') . '/',
+                'length' => 17,
+                'prefix' => $request->dept['compCode'] . '/' . $request->dept['deptCode'] . '/' . date('Ym') . '/',
                 'reset_on_prefix_change' => true
             ];
         }
-        $newData = TransactionProject::create([
+
+        $transaction = new TransactionProject;
+        $newData = $transaction->create([
             "PRJ_NUMBER" => IdGenerator::generate($idConfig),
             "EMPL_ID" => $request->emplId,
         ]);
+        if (!$newData) {
+            return response()->json([
+                'status' => false,
+                'message' => "Error inputed data"
+            ], 500);
+        }
+        $data = $transaction->select('UUID', 'PRJ_NUMBER', 'EMPL_ID')
+            ->where([['PRJ_ID', $newData->PRJ_ID]])
+            ->firstOrFail();
 
-        return response($newData);
+        return response($data);
     }
 
     public function create_detail(Request $request)
@@ -213,14 +224,25 @@ class Project extends Controller
      */
     public function update_header(Request $request, string $uuid)
     {
+        // $deptCode = $request->
+
         $idConfig = [
             'table' => 'tr_project_request',
             'field' => 'PRJ_NUMBER',
-            'length' => 17,
-            'prefix' => $request->compCode . '/' . $request->deptCode . '/' . date('Ym') . '/',
+            'length' => 11,
+            'prefix' => date('Ym') . '/',
             'reset_on_prefix_change' => true
         ];
-        $getProject = TransactionProject::where('PRJ_UUID', $uuid)->firstOrFail();
+        if ($request->companyCode !== null && $request->departCode !== null) {
+            $idConfig = [
+                'table' => 'tr_project_request',
+                'field' => 'PRJ_NUMBER',
+                'length' => 17,
+                'prefix' => $request->companyCode . '/' . $request->departCode . '/' . date('Ym') . '/',
+                'reset_on_prefix_change' => true
+            ];
+        }
+        $getProject = TransactionProject::where('UUID', $uuid)->firstOrFail();
         $getProject->PRJ_NUMBER = IdGenerator::generate($idConfig);
         $getProject->save();
 

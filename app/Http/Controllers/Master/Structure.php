@@ -285,5 +285,34 @@ class Structure extends Controller
     }
     public function create_dtStructure(Request $request)
     {
+        try {
+            DB::transaction(function () use ($request) {
+                $structure = $request->employeeStructure;
+                foreach ($structure as $keyStruct => $valStruct) {
+                    Detail_Structure::create([
+                        "MEMBER_EMP_POST" => $valStruct['memberId'],
+                        "LEADER_EMP_POST" => $valStruct['leaderId'],
+                        "STRUCTURE_ID" => $request->structureId,
+                        "STRUCTURE_NUMBER" => (int) $valStruct['nodeIds'],
+                        "APPROVE_LOWER" => ($valStruct['leaderExceptAmount']['lower'] != "" || $valStruct['leaderExceptAmount']['lower'] != 0) ? 0 : 1,
+                        "APPROVE_LOWER_THAN" => ($valStruct['leaderExceptAmount']['lower'] == "") ? 0 :
+                            $valStruct['leaderExceptAmount']['lower'],
+                        "APPROVE_UPPER" => ($valStruct['leaderExceptAmount']['upper'] != "" || $valStruct['leaderExceptAmount']['upper'] != 0) ? 0 : 1,
+                        "APPROVE_UPPER_THAN" => ($valStruct['leaderExceptAmount']['upper'] == "") ? 0 :
+                            $valStruct['leaderExceptAmount']['upper'],
+                    ]);
+                }
+            });
+            DB::commit();
+            return response([], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
+        return response($request);
     }
 }

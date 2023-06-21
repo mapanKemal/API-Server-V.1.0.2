@@ -18,9 +18,9 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::post('test', [UserAuthentication::class, 'tester']);
 
-Route::prefix('auth')->group(function () {
+
+Route::group(['prefix' => 'auth', 'middleware' => 'cors'], function () {
     Route::get('login', [UserAuthentication::class, 'AuthenticationNeeded'])->name('login'); /* When not authenticate user access */
     Route::post('register', [UserAuthentication::class, 'register']);
     Route::post('create_new_password', [UserAuthentication::class, 'create_newPassword']);
@@ -63,7 +63,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('detail', [Structure::class, 'get_structure']);
             Route::post('create', [Structure::class, 'create_msStructure']);
             Route::post('detail/create', [Structure::class, 'create_dtStructure']);
-            // Route::get('detail', [Structure::class, 'getStructure'])->withoutMiddleware('auth:api');
+            Route::post('get/employee', [Employee::class, 'employee_onPosition'])->withoutMiddleware('auth:api');
+            // ->withoutMiddleware('auth:api');
         });
 
         /* Other */

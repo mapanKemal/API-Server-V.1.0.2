@@ -15,6 +15,11 @@ class Detail_Structure extends Model
         "MEMBER_EMP_POST",
         "LEADER_EMP_POST",
         "STRUCTURE_ID",
+        "STRUCTURE_NUMBER",
+        "APPROVE_LOWER",
+        "APPROVE_LOWER_THAN",
+        "APPROVE_UPPER",
+        "APPROVE_UPPER_THAN",
         "ACTIVE",
     ];
 }

@@ -17,11 +17,12 @@ class Project extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "EMPL_ID",
-        "APPROVAL_ID",
         "TRANS_TY_ID",
         "DT_TRANS_TY_ID",
-        "PRJ_UUID",
+        "APPROVAL_ID",
+        "EMPL_ID",
+        "DEPT_ID",
+        "COMP_ID",
         "PRJ_NUMBER",
         "PRJ_SUBJECT",
         "PRJ_NOTES",
@@ -31,7 +32,9 @@ class Project extends Model
         "PRJ_REQUEST_DATE",
         "PRJ_COMPLETE_DATE",
         "PRJ_ATTTACHMENT",
+        "PRJ_ATTTACHMENT_EXT",
         "PRJ_ATTTACHMENT_SIZE",
+        "PRJ_DUE_DATE",
         "PRJ_CLOSE",
         "PRJ_CLOSE_DATE",
         "PRJ_CLOSE_REASON",
@@ -40,5 +43,14 @@ class Project extends Model
         "PRJ_DELETE_DATE",
         "PRJ_DELETE_REASON",
         "PRJ_DELETE_BY",
+        "STATUS",
+    ];
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        // 'PRJ_ID'
     ];
 }

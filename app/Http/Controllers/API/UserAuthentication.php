@@ -16,8 +16,8 @@ use Laravel\Passport\Token;
 
 class UserAuthentication extends Controller
 {
-    public function tester(){
-        
+    public function tester()
+    {
     }
     /**
      *  Register User
@@ -163,7 +163,6 @@ class UserAuthentication extends Controller
             ];
             /* Set User Structure */
             $userStructure_dep = EmployeePosition::select(
-                "fr_employee_position.FR_POST_ID",
                 "fr_employee_position.COMP_ID",
                 "CMP.COMP_CODE",
                 "CMP.COMP_NAME",
@@ -174,6 +173,7 @@ class UserAuthentication extends Controller
                 ->where("EMPL_ID", $user->EMPL_ID)
                 ->join('ms_departement as DPT', 'DPT.DEPT_ID', '=', 'fr_employee_position.DEPT_ID')
                 ->join('ms_company as CMP', 'CMP.COMP_ID', '=', 'fr_employee_position.COMP_ID')
+                ->groupBy('fr_employee_position.COMP_ID', 'fr_employee_position.DEPT_ID')
                 ->get();
             $result['EMP_STRUCTURE'] = $userStructure_dep;
 

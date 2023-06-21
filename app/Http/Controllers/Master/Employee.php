@@ -46,7 +46,6 @@ class Employee extends Controller
         }
 
         try {
-            // DB::beginTransaction();
             DB::transaction(function () use ($request) {
                 /* Create User  */
                 $user = User::create([
@@ -74,7 +73,7 @@ class Employee extends Controller
                     "EMPL_GENDER" => $request->gender
                 ]);
                 /* Create FR-Employee  */
-                $employeePosition = EmployeePosition::create([
+                EmployeePosition::create([
                     "USER_ID" => $user->USER_ID,
                     "EMPL_ID" => $employee->EMPL_ID,
                     "COMP_ID" => $request->company,
@@ -86,11 +85,10 @@ class Employee extends Controller
                     "ACCP_UPPER_AMOUNT" => 0,
                     "ON_STRUCTURE" => 0,
                 ]);
-
-                /* Return Response on success */
-                return response([], 200);
             });
             DB::commit();
+            /* Return Response on success */
+            return response([], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
             /* Return Response on error */
@@ -99,6 +97,34 @@ class Employee extends Controller
                 "message" => "Sorry, System can't receive your request",
             ], 500);
         }
+    }
+    public function employee_onPosition(Request $request)
+    {
+        $result = [];
+        $empPosition = EmployeePosition::select(
+            "fr_employee_position.FR_POST_ID",
+            "ms_employee.EMPL_FIRSTNAME",
+            "ms_employee.EMPL_LASTNAME",
+            "ms_employee.STATUS",
+            "ms_position.POST_NAME",
+        )
+            ->join('ms_employee', 'fr_employee_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+            ->join('ms_position', 'fr_employee_position.POST_ID', '=', 'ms_position.POST_ID')
+            ->where([
+                ['ms_employee.STATUS', 0],
+                ['fr_employee_position.COMP_ID', $request->compId],
+                ['fr_employee_position.DEPT_ID', $request->deptId]
+            ])
+            ->get();
+        foreach ($empPosition as $keyEmpPost => $valEmpPost) {
+            $res = [
+                "value" => $valEmpPost->FR_POST_ID,
+                "label" => "[" . $valEmpPost->POST_NAME . "]" . $valEmpPost->EMPL_FIRSTNAME . ' ' . $valEmpPost->EMPL_LASTNAME
+            ];
+
+            array_push($result, $res);
+        }
+        return response($result);
     }
     public function update_Employee()
     {
