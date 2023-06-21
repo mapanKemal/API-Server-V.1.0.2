@@ -170,7 +170,9 @@ class Project extends Controller
         $validateData = Validator::make(
             $request->all(),
             [
-                'primaryGroup' => 'required',
+                'group1' => 'required',
+                'companyCode' => 'required',
+                'deptartementCode' => 'required',
             ]
         );
         if ($validateData->fails()) {
@@ -182,41 +184,47 @@ class Project extends Controller
         }
 
         /* Explode Grouping ID */
-        $tyCode = explode("_", $request->primaryGroup);
-        $tyCompare = $tyCode[array_key_first($tyCode)];
-        $tyId = $tyCode[array_key_last($tyCode)];
+        $transType = $request->transactionType;
+        $transCode = explode("_", $request->group1);
+        $tyCompare = $transCode[array_key_first($transCode)];
+        $tyId = $transCode[array_key_last($transCode)];
         if ($request->secondaryGroup != null) {
             $tyId = $request->secondaryGroup;
         }
+
+        return response($request);
+        /* Set Update Project Amount */
+        $_Project = TransactionProject::where([['UUID', $request->projectUuid]])->firstOrFail();
+        $_company = Company::where([['COMP_CODE', $request->companyCode]])->firstOrFail();
+        $_departement = Departement::where([['DEPT_CODE', $request->deptartementCode]])->firstOrFail();
 
         if ($tyCompare == $this->advance_transTyId) {
             /* If Transaction Is CASH ADVANCED */
             $advanced = new CashAdvanced;
             $createTrans = $advanced->create_fromProject([
-                "EMPL_ID" => $request->emplId,
+                "EMPL_ID" => $request->employeeId,
                 "TRANS_TY_ID" => $tyId,
                 "DT_TRANS_TY_ID" => $request->detailingGroup,
-                "PRJ_ID" => $request->projectId,
-                "CADV_SUBJECT" => $request->trans_subject,
-                "CADV_NOTES" => $request->trans_Notes,
-                "CADV_AMOUNT" => $request->trans_Amount,
-                "CADV_DUE_DATE" => $request->trans_DueDate,
+                "PRJ_ID" => $_Project->PRJ_ID,
+                "CADV_SUBJECT" => $request->subject,
+                "CADV_NOTES" => $request->description,
+                "CADV_AMOUNT" => $request->amountRequest,
+                "CADV_DUE_DATE" => $request->dueDate,
                 "CADV_ATTACHMENT" => null,
                 "CADV_ATTACHMENT_SIZE" => 0,
             ], [
+                "COMP_ID" => $_company->COMP_ID,
                 "COMP_CODE" => $request->compCode,
+
+                "DEPT_ID" => $_departement->DEPT_ID,
                 "DEPT_CODE" => $request->deptCode,
             ]);
         } elseif ($tyCompare == $this->reimburse_transTyId) {
             /* If Transaction Is REIMBURSEMENT */
         }
 
-        /* Set Update Project Amount */
-        $_Project = TransactionProject::find($request->projectId);
-        $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->trans_Amount;
+        $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->amountRequest;
         $_Project->save();
-
-        return response($_Project);
     }
 
     /**

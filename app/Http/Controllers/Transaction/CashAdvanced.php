@@ -30,7 +30,6 @@ class CashAdvanced extends Controller
             'length' => 21,
             'prefix' =>  'CAD/' . $other['COMP_CODE'] . '/' . $other['DEPT_CODE'] . '/' . date('Ym') . '/'
         ];
-        $createCad["CADV_UUID"] = Uuid::uuid4();
         $createCad["CADV_NUMBER"] = IdGenerator::generate($idConfig);
         $_createTransaction = TransactionCashAdvanced::create($createCad);
 
