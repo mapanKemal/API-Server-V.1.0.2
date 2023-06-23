@@ -79,8 +79,10 @@ Route::middleware('auth:api')->group(function () {
         Route::prefix('project')->group(function () {
             Route::apiResource('/', Project::class);
             Route::get('newTransaction', [Project::class, 'index_newTransaction']);
-            // Route::get('transByHeader/{uuid}', [Project::class, 'index_transByHeader']);
+            Route::get('header/{uuid}', [Project::class, 'index_transByHeader']);
+            Route::get('detailByHeader/{uuid}', [Project::class, 'index_detailByHeader']);
             Route::get('EditData/{uuid}', [Project::class, 'modalEditData']);
+            Route::post('save/{uuid}', [Project::class, 'create']);
             Route::post('createHeader', [Project::class, 'create_header']);
             Route::post('updateHeader/{uuid}', [Project::class, 'update_header']);
             Route::post('createDetail', [Project::class, 'create_detail']);
