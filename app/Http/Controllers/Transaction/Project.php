@@ -229,7 +229,7 @@ class Project extends Controller
         $_Project->PRJ_NOTES = $request->description;
         $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest;
         $_Project->PRJ_REQUEST_DATE = date('Y-m-d');
-        $_Project->PRJ_DUE_DATE = $request->dueDate;
+        $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
         $_Project->PRJ_CLOSE_DATE = date('Y-m-d', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
         // $_Project->PRJ_ATTTACHMENT = $request->;
         // $_Project->PRJ_ATTTACHMENT_EXT = $request->;
