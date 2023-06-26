@@ -26,12 +26,27 @@ class Project extends Controller
     public function index_newTransaction()
     {
         //
-        return response(TransactionProject::all());
+        return response(TransactionProject::select(
+            "tr_project_request.*",
+            "ms_company.COMP_CODE",
+            "ms_departement.DEPT_CODE",
+        )
+            ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->get());
     }
     public function index_transByHeader(string $uuid)
     {
         //
-        return response(TransactionProject::where('UUID', $uuid)->firstOrFail());
+        return response(TransactionProject::select(
+            "tr_project_request.*",
+            "ms_company.COMP_CODE",
+            "ms_departement.DEPT_CODE",
+        )
+            ->join('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->join('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where('UUID', $uuid)
+            ->firstOrFail());
     }
     public function index_detailByHeader(string $uuid)
     {
