@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Approvals\ApprovalProject;
 use App\Http\Controllers\Master\Employee;
 use App\Http\Controllers\Master\Setup_Company;
 use App\Http\Controllers\Master\Structure;
@@ -84,6 +85,9 @@ Route::middleware('auth:api')->group(function () {
             Route::get('EditData/{uuid}', [Project::class, 'modalEditData']);
             Route::post('save/{uuid}', [Project::class, 'create']);
             // Route::post('delete/{uuid}', [Project::class, 'create']);
+            Route::prefix('approval')->group(function () {
+                Route::post('request/{uuid}', [ApprovalProject::class, 'createApproval']);
+            });
 
             Route::post('createHeader', [Project::class, 'create_header']);
             Route::post('createDetail', [Project::class, 'create_detail']);

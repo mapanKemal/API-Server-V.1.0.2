@@ -29,7 +29,9 @@ class Project extends Controller
         return response(TransactionProject::select(
             "tr_project_request.*",
             "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
             "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
         )
             ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
             ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
@@ -41,7 +43,9 @@ class Project extends Controller
         return response(TransactionProject::select(
             "tr_project_request.*",
             "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
             "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
         )
             ->join('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
             ->join('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
@@ -251,6 +255,7 @@ class Project extends Controller
         // $_Project->PRJ_ATTTACHMENT_SIZE = $request->;
         $_Project->save();
         return response($_Project);
+        // return response($request);
     }
 
     public function create_header(Request $request)
