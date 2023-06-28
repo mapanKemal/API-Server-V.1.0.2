@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
+use App\Models\Approvals\Approval;
 use App\Models\Master\Company;
 use App\Models\Master\Departement;
+use App\Models\Master\Employee;
 use App\Models\Transaction\Project as TransactionProject;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
 
@@ -23,19 +27,104 @@ class Project extends Controller
         //
         return response(TransactionProject::all());
     }
-    public function index_newTransaction()
+    public function index_empTransProgress(Request $request)
     {
         //
-        return response(TransactionProject::select(
-            "tr_project_request.*",
-            "ms_company.COMP_CODE",
-            "ms_company.COMP_NAME",
-            "ms_departement.DEPT_CODE",
-            "ms_departement.DEPT_NAME",
-        )
-            ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
-            ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
-            ->get());
+        $prjTransaction = [];
+        $result_2 = [];
+        foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
+            $data = TransactionProject::select(
+                "tr_project_request.*",
+                "ms_company.COMP_CODE",
+                "ms_company.COMP_NAME",
+                "ms_departement.DEPT_CODE",
+                "ms_departement.DEPT_NAME",
+            )
+                ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+                ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+                ->where([
+                    ['tr_project_request.STATUS', '!=', 0],
+                    ['tr_project_request.EMPL_ID', $request->employeeId],
+                    ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
+                    ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']]
+                ])
+                ->get();
+            foreach ($data as $key => $valData) {
+                // msTime: "1 Januari 2023, 23:20",
+                // msContent: "Timeline Test",
+                $timelineData = [];
+                $timeline = Approval::select(
+                    "tr_approval.APPROVAL_ID",
+                    "tr_approval.STATUS",
+                    "tr_approval.CREATED_AT",
+                    "tr_approval.LOG_ACTIVITY",
+                    "dt_approval.DT_APPR_ID",
+                    "dt_approval.USER_ID",
+                    "dt_approval.EMPL_ID",
+                    "dt_approval.DT_APPR_REQ_DATE",
+                    "dt_approval.DT_APPR_DATE",
+                    "dt_approval.DT_APPR_DESCRIPTION",
+                    "ms_approval_code.APPROVAL_CODE_ID",
+                    "ms_approval_code.APPROVAL_CODE_DESC",
+                )
+                    ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+                    ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                    ->where([
+                        ['tr_approval.APPROVAL_ID', $valData->APPROVAL_ID],
+                        ['dt_approval.APPROVAL_CODE_ID', '!=', 1]
+                    ])
+                    ->get();
+                $row = 0;
+                foreach ($timeline as $keyTimeline => $valTimeline) {
+                    $empl = Employee::where([['EMPL_ID', $valTimeline->EMPL_ID]])->firstOrFail();
+                    $valTimeline['msTime'] = '[' . $valTimeline->APPROVAL_CODE_DESC . '] ' . Carbon::parse($row == 0 ? $valTimeline->CREATED_AT : $valTimeline->DT_APPR_REQ_DATE)->translatedFormat('d F Y H:i');
+                    $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
+
+                    array_push($timelineData, $valTimeline);
+                    $row = $row + 1;
+                }
+
+                $valData->PRJ_TIMELINE = $timelineData;
+            }
+            array_push($prjTransaction, $data);
+        }
+        foreach ($prjTransaction as $key => $val_1) {
+            foreach ($val_1 as $key => $val_2) {
+                array_push($result_2, $val_2);
+            }
+        }
+        return response($result_2);
+    }
+    public function index_newTransaction(Request $request)
+    {
+        //
+        $queryResult = [];
+        $result_2 = [];
+        foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
+            $data = TransactionProject::select(
+                "tr_project_request.*",
+                "ms_company.COMP_CODE",
+                "ms_company.COMP_NAME",
+                "ms_departement.DEPT_CODE",
+                "ms_departement.DEPT_NAME",
+            )
+                ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+                ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+                ->where([
+                    ['tr_project_request.STATUS', 0],
+                    ['tr_project_request.EMPL_ID', $request->employeeId],
+                    ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
+                    ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']]
+                ])
+                ->get();
+            array_push($queryResult, $data);
+        }
+        foreach ($queryResult as $key => $val_1) {
+            foreach ($val_1 as $key => $val_2) {
+                array_push($result_2, $val_2);
+            }
+        }
+        return response($result_2);
     }
     public function index_transByHeader(string $uuid)
     {
@@ -256,6 +345,43 @@ class Project extends Controller
         $_Project->save();
         return response($_Project);
         // return response($request);
+    }
+
+    public function createFromApproval($request, string $uuid)
+    {
+        //
+        $_Project = TransactionProject::where([['UUID', $uuid]])->firstOrFail();
+        $_company = Company::where([['COMP_CODE', $request->companyCode]])->firstOrFail();
+        $_departement = Departement::where([['DEPT_CODE', $request->deptartementCode]])->firstOrFail();
+        try {
+            DB::transaction(function () use ($request, $_Project, $_company, $_departement, $uuid) {
+
+                /* Project updates */
+                $_Project->TRANS_TY_ID = $request->transactionType;
+                $_Project->EMPL_ID = $request->employeeId;
+                $_Project->DEPT_ID = $_company->COMP_ID;
+                $_Project->COMP_ID = $_departement->DEPT_ID;
+                $_Project->PRJ_SUBJECT = $request->subject;
+                $_Project->PRJ_NOTES = $request->description;
+                $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest;
+                $_Project->PRJ_REQUEST_DATE = date('Y-m-d H:i:s');
+                $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
+                $_Project->PRJ_CLOSE_DATE = date('Y-m-d H:i:s', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
+                // $_Project->PRJ_ATTTACHMENT = $request->;
+                // $_Project->PRJ_ATTTACHMENT_EXT = $request->;
+                // $_Project->PRJ_ATTTACHMENT_SIZE = $request->;
+                $_Project->save();
+            });
+            DB::commit();
+            return response($_Project, 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
     }
 
     public function create_header(Request $request)

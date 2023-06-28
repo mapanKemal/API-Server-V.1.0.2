@@ -149,6 +149,7 @@ class UserAuthentication extends Controller
             $result = [
                 "UUID" => $user->UUID,
                 "ALIASES" => ucfirst($user->ALIASES),
+                "USER_ID" => $user->USER_ID,
                 "EMPL_ID" => $user->EMPL_ID,
                 "EMPL_NUMBER" => $user->EMPL_NUMBER,
                 "EMPL_UNIQUE_CODE" => $user->EMPL_UNIQUE_CODE,
