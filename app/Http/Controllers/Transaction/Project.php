@@ -50,8 +50,6 @@ class Project extends Controller
                 ])
                 ->get();
             foreach ($data as $key => $valData) {
-                // msTime: "1 Januari 2023, 23:20",
-                // msContent: "Timeline Test",
                 $timelineData = [];
                 $timeline = Approval::select(
                     "tr_approval.APPROVAL_ID",
@@ -66,6 +64,7 @@ class Project extends Controller
                     "dt_approval.DT_APPR_DESCRIPTION",
                     "ms_approval_code.APPROVAL_CODE_ID",
                     "ms_approval_code.APPROVAL_CODE_DESC",
+                    "ms_approval_code.SYS_APPROVAL_VARIANT",
                 )
                     ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
                     ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
@@ -77,6 +76,7 @@ class Project extends Controller
                 $row = 0;
                 foreach ($timeline as $keyTimeline => $valTimeline) {
                     $empl = Employee::where([['EMPL_ID', $valTimeline->EMPL_ID]])->firstOrFail();
+                    $valTimeline['msStatusColor'] = $valTimeline->SYS_APPROVAL_VARIANT;
                     $valTimeline['msTime'] = '[' . $valTimeline->APPROVAL_CODE_DESC . '] ' . Carbon::parse($row == 0 ? $valTimeline->CREATED_AT : $valTimeline->DT_APPR_REQ_DATE)->translatedFormat('d F Y H:i');
                     $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
 
@@ -335,7 +335,7 @@ class Project extends Controller
         $_Project->COMP_ID = $_departement->DEPT_ID;
         $_Project->PRJ_SUBJECT = $request->subject;
         $_Project->PRJ_NOTES = $request->description;
-        $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest;
+        $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest == null ? 0 : $request->amountRequest;
         $_Project->PRJ_REQUEST_DATE = date('Y-m-d');
         $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
         $_Project->PRJ_CLOSE_DATE = date('Y-m-d', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
@@ -344,18 +344,18 @@ class Project extends Controller
         // $_Project->PRJ_ATTTACHMENT_SIZE = $request->;
         $_Project->save();
         return response($_Project);
-        // return response($request);
     }
 
+    /**
+     * Create project from approval request
+     */
     public function createFromApproval($request, string $uuid)
     {
-        //
         $_Project = TransactionProject::where([['UUID', $uuid]])->firstOrFail();
         $_company = Company::where([['COMP_CODE', $request->companyCode]])->firstOrFail();
         $_departement = Departement::where([['DEPT_CODE', $request->deptartementCode]])->firstOrFail();
         try {
             DB::transaction(function () use ($request, $_Project, $_company, $_departement, $uuid) {
-
                 /* Project updates */
                 $_Project->TRANS_TY_ID = $request->transactionType;
                 $_Project->EMPL_ID = $request->employeeId;
@@ -363,7 +363,7 @@ class Project extends Controller
                 $_Project->COMP_ID = $_departement->DEPT_ID;
                 $_Project->PRJ_SUBJECT = $request->subject;
                 $_Project->PRJ_NOTES = $request->description;
-                $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest;
+                $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest == null ? 0 : $request->amountRequest;
                 $_Project->PRJ_REQUEST_DATE = date('Y-m-d H:i:s');
                 $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
                 $_Project->PRJ_CLOSE_DATE = date('Y-m-d H:i:s', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
