@@ -202,4 +202,10 @@ class ApprovalProject extends Controller
 
         return $structure;
     }
+
+    public function index_approval(Request $request)
+    {
+
+        return response([]);
+    }
 }

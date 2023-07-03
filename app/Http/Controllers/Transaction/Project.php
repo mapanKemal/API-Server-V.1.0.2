@@ -97,7 +97,6 @@ class Project extends Controller
     }
     public function index_newTransaction(Request $request)
     {
-        //
         $queryResult = [];
         $result_2 = [];
         foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
