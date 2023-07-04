@@ -114,11 +114,11 @@ class ApprovalProject extends Controller
                         "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1), # New approval code
                         "DT_APPR_REQ_DATE" => $keyClStructure == 0 ? date('Y-m-d H:i:s') : ($keyClStructure == 1 ? date('Y-m-d H:i:s') : null),
                         "DT_APPR_NUMBER" => $dtNumber,
+                        "STATUS" => $keyClStructure == 0 ? 98 : ($keyClStructure == 1 ? 1 : 0), # New approval tans status,
                         "LOG_ACTIVITY" => [],
                         // "DT_APPR_DATE",
                         // "DT_APPR_DESCRIPTION",
                         // "DT_APPR_DEACTIVE",
-                        // "STATUS",
                         // "NOTIFICATION_RESPONSE",
                     ]);
 

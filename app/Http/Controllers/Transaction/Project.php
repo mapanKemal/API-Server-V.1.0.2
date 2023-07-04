@@ -34,15 +34,33 @@ class Project extends Controller
         $result_2 = [];
         foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
             $data = TransactionProject::select(
-                "tr_project_request.*",
+                "tr_project_request.PRJ_ID",
+                "tr_project_request.UUID",
+                "tr_project_request.PRJ_NUMBER",
+                "tr_project_request.PRJ_SUBJECT",
+                "tr_project_request.PRJ_NOTES",
+                "tr_project_request.PRJ_TOTAL_AMOUNT_REQUEST",
+                "tr_project_request.PRJ_TOTAL_AMOUNT_USED",
+                "tr_project_request.STATUS",
+                "tr_project_request.APPROVAL_ID",
+                // "tr_project_request.PRJ_ATTTACHMENT",
                 "ms_company.COMP_CODE",
                 "ms_company.COMP_NAME",
                 "ms_departement.DEPT_CODE",
                 "ms_departement.DEPT_NAME",
+                "dt_approval.STATUS as APPR_STATUS",
+                "dt_approval.APPROVAL_CODE_ID",
+                "ms_approval_code.APPROVAL_CODE_DESC",
+                "ms_employee.EMPL_FIRSTNAME as FIRSTNAME",
+                "ms_employee.EMPL_LASTNAME as LASTNAME",
             )
                 ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
                 ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+                ->leftJoin('dt_approval', 'tr_project_request.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+                ->leftJoin('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                ->leftJoin('ms_employee', 'dt_approval.EMPL_ID', '=', 'ms_employee.EMPL_ID')
                 ->where([
+                    ['dt_approval.STATUS', 1],
                     ['tr_project_request.STATUS', '!=', 0],
                     ['tr_project_request.EMPL_ID', $request->employeeId],
                     ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
