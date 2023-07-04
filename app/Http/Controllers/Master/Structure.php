@@ -123,10 +123,11 @@ class Structure extends Controller
             ->join('ms_position', 'ms_position.POST_ID', '=', 'fr_employee_position.POST_ID')
             ->join('ms_employee', 'fr_employee_position.EMPL_ID', '=', 'ms_employee.EMPL_ID')
             ->whereRaw(
+                /* Get max position number */
                 'ms_position.POST_NUMBER = ( 
                     select max(MP.POST_NUMBER) 
                     from ms_position MP 
-                    join fr_employee_position FP on mp.POST_ID = FP.POST_ID 
+                    join fr_employee_position FP on MP.POST_ID = FP.POST_ID 
                     where FP.COMP_ID=' . $compId . ' and FP.DEPT_ID=' . $deptId . '
                 )'
             )
@@ -136,7 +137,12 @@ class Structure extends Controller
                 ['ms_structural.STRUCTURE_ID', $structureId],
             ])
             ->first();
-
+        if ($firstLead == null) {
+            return response([
+                'status' => false,
+                'message' => 'Cannot found first lead on employee position'
+            ], 500);
+        }
 
         /* Get member structure */
         $getStructure = MasterStructure::select(
