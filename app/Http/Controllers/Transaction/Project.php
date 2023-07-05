@@ -248,6 +248,59 @@ class Project extends Controller
 
         return response($result);
     }
+    public function index_detail(string $uuid)
+    {
+        //
+        $result = [];
+
+        /* CADV Loop */
+        $cadv = TransactionProject::select(
+            'tr_cash_advanced.APPROVAL_ID',
+            'tr_cash_advanced.APPROVAL_CODE_ID',
+            'tr_cash_advanced.TRANS_TY_ID',
+            'tr_cash_advanced.CADV_ID',
+            'tr_cash_advanced.UUID',
+            'tr_cash_advanced.CADV_NUMBER',
+            'tr_cash_advanced.CADV_SUBJECT',
+            'tr_cash_advanced.CADV_NOTES',
+            'tr_cash_advanced.CADV_AMOUNT',
+            'tr_cash_advanced.CADV_ATTACHMENT',
+            'tr_cash_advanced.STATUS',
+            'tr_cash_advanced.CREATED_AT',
+            'b.TRANS_TY_NAME as TYPE_1',
+            'a.TRANS_TY_NAME as TYPE_2',
+            'c.DT_TRANS_TY_NAME as TYPE_DT',
+        )
+            ->where('tr_project_request.UUID', $uuid)
+            ->join('tr_cash_advanced', 'tr_project_request.PRJ_ID', 'tr_cash_advanced.PRJ_ID')
+            ->join('ms_transaction_type as a', 'tr_cash_advanced.TRANS_TY_ID', 'a.TRANS_TY_ID')
+            ->join('ms_transaction_type as b', 'a.SUB_TRANS_TY_ID', 'b.TRANS_TY_ID')
+            ->leftjoin('dt_transaction_type as c', 'tr_project_request.DT_TRANS_TY_ID', 'c.DT_TRANS_TY_ID')
+            ->get();
+        foreach ($cadv as $keyCadv => $valCadv) {
+            $data = [
+                'APPROVAL_ID' => $valCadv->APPROVAL_ID,
+                'APPROVAL_CODE_ID' => $valCadv->APPROVAL_CODE_ID,
+                'TRANSACTION_ID' => $valCadv->CADV_ID,
+                'TRANSACTION_UUID' => $valCadv->UUID,
+                'TRANSACTION_TYPE' => $valCadv->TYPE_1 . ' [' . $valCadv->TYPE_2 . ']',
+                'TRANSACTION_DT_TYPE' => $valCadv->TYPE_DT,
+                'TRANSACTION_NUMBER' => $valCadv->CADV_NUMBER,
+                'TRANSACTION_SUBJECT' => $valCadv->CADV_SUBJECT,
+                'TRANSACTION_NOTES' => $valCadv->CADV_NOTES,
+                'TRANSACTION_AMOUNT' => $valCadv->CADV_AMOUNT,
+                'TRANSACTION_ATTACHMENT' => $valCadv->CADV_ATTACHMENT,
+                'TRANSACTION_STATUS' => $valCadv->STATUS,
+                'TRANSACTION_REQUESTED_AT' => $valCadv->CREATED_AT,
+            ];
+            array_push($result, $data);
+        }
+
+        /* REIMB Loop */
+
+        return $result;
+    }
+
     public function modalEditData(string $uuid)
     {
         //

@@ -203,9 +203,70 @@ class ApprovalProject extends Controller
         return $structure;
     }
 
-    public function index_approval(Request $request)
+    public function index_approvalTable(Request $request)
     {
+        $result = [];
+        $finalResult = [];
+        $_project = new TransactionProject;
+        $_approval = new ApprovalBase;
+        $date_1 = date('Y-m-d', strtotime($request->dateRange[0]));
+        $date_2 = date('Y-m-d', strtotime($request->dateRange[1]));
+        foreach ($request->employeePosition as $keyEmpPost => $valEmpPost) {
+            $project = Project::select(
+                "tr_project_request.PRJ_ID",
+                "tr_project_request.TRANS_TY_ID",
+                "tr_project_request.DT_TRANS_TY_ID",
+                "tr_project_request.APPROVAL_ID",
+                "tr_project_request.EMPL_ID",
+                "tr_project_request.DEPT_ID",
+                "tr_project_request.COMP_ID",
+                "tr_project_request.UUID",
+                "tr_project_request.PRJ_NUMBER",
+                "tr_project_request.PRJ_SUBJECT",
+                "tr_project_request.PRJ_NOTES",
+                "tr_project_request.PRJ_TOTAL_AMOUNT_REQUEST",
+                "tr_project_request.PRJ_TOTAL_AMOUNT_USED",
+                "tr_project_request.PRJ_ATTTACHMENT",
+                "tr_project_request.PRJ_ATTTACHMENT_EXT",
+                "tr_project_request.PRJ_ATTTACHMENT_SIZE",
+                "tr_project_request.PRJ_DUE_DATE",
+                "tr_project_request.STATUS",
+                "dt_approval.DT_APPR_ID",
+                "dt_approval.USER_ID",
+                "dt_approval.APPROVAL_CODE_ID",
+                "dt_approval.DT_APPR_NUMBER",
+                "dt_approval.DT_APPR_REQ_DATE as REQ_DATE",
+                "dt_approval.DT_APPR_DATE",
+                "tr_approval.APPR_FINAL_DATE",
+                "ms_approval_code.APPROVAL_CODE_DESC",
+            )
+                ->join('dt_approval', 'tr_project_request.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+                ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                ->join('tr_approval', 'tr_project_request.APPROVAL_ID', '=', 'tr_approval.APPROVAL_ID')
+                ->where([
+                    ['tr_project_request.PRJ_DELETE', 0],
+                    ['tr_approval.COMP_ID', $valEmpPost['COMP_ID']],
+                    ['tr_approval.DEPT_ID', $valEmpPost['DEPT_ID']],
+                    ['dt_approval.USER_ID', $request->userId],
+                    ['dt_approval.STATUS', 1],
+                ])
+                ->whereBetween('dt_approval.DT_APPR_REQ_DATE', [$date_1, $date_2])
+                ->get();
+            if ($project->count() !== 0) {
+                foreach ($project as $keyProject => $valProject) {
+                    $valProject->APPROVAL_STATUS = $valProject->APPROVAL_CODE_DESC;
+                    $valProject->NEXT_APPROVAL = $_approval->nextApproval($valProject->DT_APPR_NUMBER, $valProject->APPROVAL_ID, $valProject->COMP_ID, $valProject->DEPT_ID);
+                    $valProject->DETAIL = $_project->index_detail($valProject->UUID);
+                }
+                array_push($result, $project);
+            }
+        }
 
-        return response([]);
+        foreach ($result as $keyResult => $valResult1) {
+            foreach ($valResult1 as $keyResult => $valResult2) {
+                array_push($finalResult, $valResult2);
+            }
+        }
+        return response($finalResult);
     }
 }

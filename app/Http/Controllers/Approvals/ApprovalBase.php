@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Approvals;
 
 use App\Http\Controllers\Controller;
+use App\Models\Approvals\Approval;
 use App\Models\Approvals\SystemStructural;
 use App\Models\Master\Detail_Structure;
 use Illuminate\Http\Request;
@@ -97,6 +98,26 @@ class ApprovalBase extends Controller
         }
         return $result;
     }
+    public function nextApproval($lastApprNumber, $approvalId, $compId, $deptId)
+    {
+        return Approval::select(
+            "ms_employee.EMPL_FIRSTNAME",
+            "ms_employee.EMPL_LASTNAME",
+            "ms_users.ALIASES",
+            "dt_approval.DT_APPR_ID",
+        )
+            ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+            ->join('ms_users', 'dt_approval.USER_ID', '=', 'ms_users.USER_ID')
+            ->join('ms_employee', 'dt_approval.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+            ->where([
+                ['tr_approval.APPROVAL_ID', $approvalId],
+                ['tr_approval.COMP_ID', $compId],
+                ['tr_approval.DEPT_ID', $deptId],
+                ['dt_approval.DT_APPR_NUMBER', ($lastApprNumber + 1)],
+                ['dt_approval.APPROVAL_CODE_ID', 1],
+            ])->firstOrFail();
+    }
+
     private function setSystemStructure($transactionType)
     {
         $mStructure = SystemStructural::select("STRUCTURE_ID")

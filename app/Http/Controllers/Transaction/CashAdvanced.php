@@ -17,6 +17,10 @@ class CashAdvanced extends Controller
     {
         //
     }
+    public function indexBy()
+    {
+        //
+    }
 
     /**
      * Show the form for creating a new resource.

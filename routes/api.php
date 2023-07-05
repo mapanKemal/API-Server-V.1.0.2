@@ -90,6 +90,8 @@ Route::middleware('auth:api')->group(function () {
             // Route::post('delete/{uuid}', [Project::class, 'create']);
             Route::prefix('approval')->group(function () {
                 Route::post('request/{uuid}', [ApprovalProject::class, 'createApproval']);
+
+                Route::post('/', [ApprovalProject::class, 'index_approvalTable']);
             });
 
             Route::post('createHeader', [Project::class, 'create_header']);
