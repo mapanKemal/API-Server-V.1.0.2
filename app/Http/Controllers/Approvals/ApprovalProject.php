@@ -220,7 +220,7 @@ class ApprovalProject extends Controller
                 "tr_project_request.EMPL_ID",
                 "tr_project_request.DEPT_ID",
                 "tr_project_request.COMP_ID",
-                "tr_project_request.UUID",
+                "tr_project_request.UUID as TRANS_UUID",
                 "tr_project_request.PRJ_NUMBER",
                 "tr_project_request.PRJ_SUBJECT",
                 "tr_project_request.PRJ_NOTES",
@@ -231,7 +231,7 @@ class ApprovalProject extends Controller
                 "tr_project_request.PRJ_ATTTACHMENT_SIZE",
                 "tr_project_request.PRJ_DUE_DATE",
                 "tr_project_request.STATUS",
-                "dt_approval.DT_APPR_ID",
+                "dt_approval.UUID as DT_APPR_UUID",
                 "dt_approval.USER_ID",
                 "dt_approval.APPROVAL_CODE_ID",
                 "dt_approval.DT_APPR_NUMBER",
@@ -239,6 +239,7 @@ class ApprovalProject extends Controller
                 "dt_approval.DT_APPR_DATE",
                 "tr_approval.APPR_FINAL_DATE",
                 "ms_approval_code.APPROVAL_CODE_DESC",
+                "dt_approval.STATUS as APPROVAL_STATUS",
             )
                 ->join('dt_approval', 'tr_project_request.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
                 ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
@@ -248,15 +249,14 @@ class ApprovalProject extends Controller
                     ['tr_approval.COMP_ID', $valEmpPost['COMP_ID']],
                     ['tr_approval.DEPT_ID', $valEmpPost['DEPT_ID']],
                     ['dt_approval.USER_ID', $request->userId],
-                    ['dt_approval.STATUS', 1],
+                    ['dt_approval.STATUS', '!=', 0],
                 ])
                 ->whereBetween('dt_approval.DT_APPR_REQ_DATE', [$date_1, $date_2])
                 ->get();
             if ($project->count() !== 0) {
                 foreach ($project as $keyProject => $valProject) {
-                    $valProject->APPROVAL_STATUS = $valProject->APPROVAL_CODE_DESC;
                     $valProject->NEXT_APPROVAL = $_approval->nextApproval($valProject->DT_APPR_NUMBER, $valProject->APPROVAL_ID, $valProject->COMP_ID, $valProject->DEPT_ID);
-                    $valProject->DETAIL = $_project->index_detail($valProject->UUID);
+                    $valProject->DETAIL = $_project->index_detail($valProject->TRANS_UUID);
                 }
                 array_push($result, $project);
             }
@@ -268,5 +268,37 @@ class ApprovalProject extends Controller
             }
         }
         return response($finalResult);
+    }
+
+    public function actionApproval(Request $request, string $uuid)
+    {
+        /* Use Try Catch transaction */
+
+        $current_DtApproval = Detail_Approval::where([
+            ['UUID', $uuid]
+        ])
+            ->first();
+        $current_DtApproval->APPROVAL_CODE_ID = $request->approvalCode;
+        $current_DtApproval->DT_APPR_DATE = date('Y-m-d H:i:s');
+        $current_DtApproval->STATUS = 96; // Set status matcher //
+
+        // $current_DtApproval->LOG_ACTIVITY->append((object) [
+        //     "time" => date('Y-m-d H:i:s'),
+        //     "user" => $current_DtApproval->USER_ID,
+        //     "requestDate" => null,
+        //     "approveDate" => null,
+        //     "approveCode" => null,
+        // ]);
+        $current_DtApproval->save();
+
+        $next_DtApproval = Detail_Approval::where([
+            ['UUID', $request->nextApproval['UUID']]
+        ])->first();
+        $next_DtApproval->DT_APPR_REQ_DATE = date('Y-m-d H:i:s');
+        // $current_DtApproval->LOG_ACTIVITY = 1;
+        $current_DtApproval->STATUS = 1;
+        $current_DtApproval->save();
+
+        return response($next_DtApproval);
     }
 }

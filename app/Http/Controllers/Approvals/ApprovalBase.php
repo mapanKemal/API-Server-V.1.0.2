@@ -104,7 +104,8 @@ class ApprovalBase extends Controller
             "ms_employee.EMPL_FIRSTNAME",
             "ms_employee.EMPL_LASTNAME",
             "ms_users.ALIASES",
-            "dt_approval.DT_APPR_ID",
+            "dt_approval.UUID",
+            // "dt_approval.DT_APPR_ID",
         )
             ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
             ->join('ms_users', 'dt_approval.USER_ID', '=', 'ms_users.USER_ID')
