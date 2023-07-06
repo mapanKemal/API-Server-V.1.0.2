@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UserAuthentication;
+use App\Http\Controllers\Approvals\ApprovalBase;
 use App\Http\Controllers\Approvals\ApprovalProject;
 use App\Http\Controllers\Master\Employee;
 use App\Http\Controllers\Master\Setup_Company;
@@ -73,6 +74,9 @@ Route::middleware('auth:api')->group(function () {
             Route::get('projectType/{id}', [TransactionType::class, 'show_projectType']);
             Route::get('projectSubType/{id}', [TransactionType::class, 'show_projectSubType']);
             Route::get('projectSubDtType/{id}', [TransactionType::class, 'show_projectSubDtType']);
+        });
+        Route::prefix('approval_code')->group(function () {
+            Route::get('list', [ApprovalBase::class, '_apprCode']);
         });
     });
 

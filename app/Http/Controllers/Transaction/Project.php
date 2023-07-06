@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Approvals\Approval;
+use App\Models\Approvals\Detail_Approval;
 use App\Models\Master\Company;
 use App\Models\Master\Departement;
 use App\Models\Master\Employee;
@@ -48,24 +49,35 @@ class Project extends Controller
                 "ms_company.COMP_NAME",
                 "ms_departement.DEPT_CODE",
                 "ms_departement.DEPT_NAME",
-                "dt_approval.STATUS as APPR_STATUS",
-                "dt_approval.APPROVAL_CODE_ID",
+                "DAPT.STATUS as APPR_STATUS",
+                "DAPT.DT_APPR_ID",
+                "DAPT.APPROVAL_CODE_ID",
+                "ms_approval_code.SYS_APPROVAL_VARIANT as APPROVAL_COLOR",
                 "ms_approval_code.APPROVAL_CODE_DESC",
                 "ms_employee.EMPL_FIRSTNAME as FIRSTNAME",
                 "ms_employee.EMPL_LASTNAME as LASTNAME",
             )
                 ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
                 ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
-                ->leftJoin('dt_approval', 'tr_project_request.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
-                ->leftJoin('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
-                ->leftJoin('ms_employee', 'dt_approval.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+                ->leftJoin('dt_approval as DAPT', 'tr_project_request.APPROVAL_ID', '=', 'DAPT.APPROVAL_ID')
+                ->leftJoin('ms_approval_code', 'DAPT.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                ->leftJoin('ms_employee', 'DAPT.EMPL_ID', '=', 'ms_employee.EMPL_ID')
                 ->where([
-                    ['dt_approval.STATUS', 1],
-                    ['tr_project_request.STATUS', '!=', 0],
+                    // ['tr_project_request.STATUS', 1],
                     ['tr_project_request.EMPL_ID', $request->employeeId],
                     ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
-                    ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']]
+                    ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']],
+                    ['DAPT.STATUS', '!=', 0],
                 ])
+                ->whereRaw('DAPT.DT_APPR_NUMBER = (
+                    select max(DAP.DT_APPR_NUMBER)
+                    from tr_approval TAP
+                    join dt_approval DAP on DAP.APPROVAL_ID = TAP.APPROVAL_ID
+                    where DAP.APPROVAL_ID = DAPT.APPROVAL_ID
+                    and DAP.STATUS != 0 
+                    and TAP.COMP_ID=' . $valEmpStructure['COMP_ID'] . ' 
+                    and TAP.DEPT_ID=' . $valEmpStructure['DEPT_ID'] . ' 
+                )')
                 ->get();
             foreach ($data as $key => $valData) {
                 $timelineData = [];
@@ -93,9 +105,14 @@ class Project extends Controller
                     ->get();
                 $row = 0;
                 foreach ($timeline as $keyTimeline => $valTimeline) {
+                    if ($row == 0) {
+                        $time = Carbon::parse($valTimeline->CREATED_AT)->translatedFormat('d F Y H:i');
+                    } else {
+                        $time = Carbon::parse($valTimeline->DT_APPR_REQ_DATE)->translatedFormat('d F Y H:i');
+                    }
                     $empl = Employee::where([['EMPL_ID', $valTimeline->EMPL_ID]])->firstOrFail();
-                    $valTimeline['msStatusColor'] = $valTimeline->SYS_APPROVAL_VARIANT;
-                    $valTimeline['msTime'] = '[' . $valTimeline->APPROVAL_CODE_DESC . '] ' . Carbon::parse($row == 0 ? $valTimeline->CREATED_AT : $valTimeline->DT_APPR_REQ_DATE)->translatedFormat('d F Y H:i');
+                    $valTimeline['msStatusColor'] = $valTimeline->SYS_APPROVAL_VARIANT == "danger" ? "error" : $valTimeline->SYS_APPROVAL_VARIANT;
+                    $valTimeline['msTime'] = '[' . $valTimeline->APPROVAL_CODE_DESC . '] ' . @$time;
                     $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
 
                     array_push($timelineData, $valTimeline);
@@ -113,6 +130,7 @@ class Project extends Controller
         }
         return response($result_2);
     }
+
     public function index_newTransaction(Request $request)
     {
         $queryResult = [];

@@ -7,6 +7,7 @@ use App\Http\Controllers\Transaction\Project as TransactionProject;
 use App\Models\Approvals\Approval;
 use App\Models\Approvals\Detail_Approval;
 use App\Models\Approvals\Structure_Approval;
+use App\Models\Master\ApprovalCode;
 use App\Models\Master\EmployeePosition;
 use App\Models\Master\Structure;
 use App\Models\Transaction\Project;
@@ -86,7 +87,6 @@ class ApprovalProject extends Controller
                 /* Creaye detail transaction approval */
                 $dtNumber = 0;
                 foreach ($approvalSet['structure'] as $keyClStructure => $valClStructure) {
-                    $dtNumber = $dtNumber + 1;
                     /* Get FR Employee position */
                     $getFr = EmployeePosition::select(
                         "USER_ID",
@@ -107,15 +107,33 @@ class ApprovalProject extends Controller
                     }
 
                     /* Create detail transaction approval */
+                    $dtNumber = $dtNumber + 1;
+                    $msApprCode = ApprovalCode::select('APPROVAL_CODE_DESC as DESC')
+                        ->where([
+                            ['APPROVAL_CODE_ID', $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1)]
+                        ])->firstOrFail();
                     $dt_approval = Detail_Approval::create([
                         "USER_ID" => $getFr->USER_ID,
                         "EMPL_ID" => $getFr->EMPL_ID,
                         "APPROVAL_ID" => $tr_approval->APPROVAL_ID,
                         "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1), # New approval code
                         "DT_APPR_REQ_DATE" => $keyClStructure == 0 ? date('Y-m-d H:i:s') : ($keyClStructure == 1 ? date('Y-m-d H:i:s') : null),
-                        "DT_APPR_NUMBER" => $dtNumber,
-                        "STATUS" => $keyClStructure == 0 ? 98 : ($keyClStructure == 1 ? 1 : 0), # New approval tans status,
-                        "LOG_ACTIVITY" => [],
+
+                        "STATUS" => $keyClStructure == 0 ? 96 : ($keyClStructure == 1 ? 1 : 0), # New approval tans status,
+                        "LOG_ACTIVITY" => [
+                            [
+                                "time" => date('Y-m-d H:i:s'),
+                                "user" => $keyClStructure == 0 ? $getFr->USER_ID : ($keyClStructure == 1 ? $getFr->USER_ID : "System"),
+                                "subject" => $keyClStructure == 0 ? "Created request" : ($keyClStructure == 1 ? "Pending approval" : "Approval structure created"),
+                                "option" => [
+                                    "USER_ID" => $getFr->USER_ID,
+                                    "EMPL_ID" => $getFr->EMPL_ID,
+                                    "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1),
+                                    "APPROVAL_STATUS_DESC" => $msApprCode->DESC,
+                                    "DT_APPR_REQ_DATE" => $keyClStructure == 0 ? date('Y-m-d H:i:s') : ($keyClStructure == 1 ? date('Y-m-d H:i:s') : null),
+                                ]
+                            ]
+                        ],
                         // "DT_APPR_DATE",
                         // "DT_APPR_DESCRIPTION",
                         // "DT_APPR_DEACTIVE",
@@ -123,17 +141,7 @@ class ApprovalProject extends Controller
                     ]);
 
                     /* Log on detail table */
-                    $dt_approval->LOG_ACTIVITY = [
-                        "time" => date('Y-m-d H:i:s'),
-                        "user" => $keyClStructure == 0 ? $getFr->USER_ID : ($keyClStructure == 1 ? $getFr->USER_ID : "System"),
-                        "subject" => $keyClStructure == 0 ? "Created request" : ($keyClStructure == 1 ? "Waiting approval" : "Approval structure created"),
-                        "desc" => [
-                            "USER_ID" => $getFr->USER_ID,
-                            "EMPL_ID" => $getFr->EMPL_ID,
-                            "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1),
-                            "DT_APPR_REQ_DATE" => $keyClStructure == 0 ? date('Y-m-d H:i:s') : ($keyClStructure == 1 ? date('Y-m-d H:i:s') : null),
-                        ]
-                    ];
+                    $dt_approval->DT_APPR_NUMBER = $dtNumber;
                     $dt_approval->save();
 
                     /* Send mail notification */
@@ -211,6 +219,7 @@ class ApprovalProject extends Controller
         $_approval = new ApprovalBase;
         $date_1 = date('Y-m-d', strtotime($request->dateRange[0]));
         $date_2 = date('Y-m-d', strtotime($request->dateRange[1]));
+
         foreach ($request->employeePosition as $keyEmpPost => $valEmpPost) {
             $project = Project::select(
                 "tr_project_request.PRJ_ID",
@@ -231,31 +240,41 @@ class ApprovalProject extends Controller
                 "tr_project_request.PRJ_ATTTACHMENT_SIZE",
                 "tr_project_request.PRJ_DUE_DATE",
                 "tr_project_request.STATUS",
+                "ms_approval_code.APPROVAL_CODE_DESC",
+                "ms_approval_code.SYS_APPROVAL_VARIANT as APPROVAL_CODE_COLOR",
+                "tr_approval.APPR_FINAL_DATE",
                 "dt_approval.UUID as DT_APPR_UUID",
                 "dt_approval.USER_ID",
                 "dt_approval.APPROVAL_CODE_ID",
                 "dt_approval.DT_APPR_NUMBER",
                 "dt_approval.DT_APPR_REQ_DATE as REQ_DATE",
                 "dt_approval.DT_APPR_DATE",
-                "tr_approval.APPR_FINAL_DATE",
-                "ms_approval_code.APPROVAL_CODE_DESC",
                 "dt_approval.STATUS as APPROVAL_STATUS",
             )
                 ->join('dt_approval', 'tr_project_request.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
                 ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
                 ->join('tr_approval', 'tr_project_request.APPROVAL_ID', '=', 'tr_approval.APPROVAL_ID')
+                ->join('fr_employee_position', function ($query) use ($valEmpPost) {
+                    $query->on('fr_employee_position.USER_ID', '=', 'dt_approval.USER_ID')
+                        ->where('fr_employee_position.COMP_ID', '=', $valEmpPost['COMP_ID'])
+                        ->where('fr_employee_position.DEPT_ID', '=', $valEmpPost['DEPT_ID']);
+                })
+                ->join('ms_position', 'fr_employee_position.POST_ID', '=', 'ms_position.POST_ID')
                 ->where([
                     ['tr_project_request.PRJ_DELETE', 0],
                     ['tr_approval.COMP_ID', $valEmpPost['COMP_ID']],
                     ['tr_approval.DEPT_ID', $valEmpPost['DEPT_ID']],
                     ['dt_approval.USER_ID', $request->userId],
                     ['dt_approval.STATUS', '!=', 0],
+                    ['ms_position.POST_APPROVAL_SET', 1],
                 ])
                 ->whereBetween('dt_approval.DT_APPR_REQ_DATE', [$date_1, $date_2])
                 ->get();
             if ($project->count() !== 0) {
                 foreach ($project as $keyProject => $valProject) {
-                    $valProject->NEXT_APPROVAL = $_approval->nextApproval($valProject->DT_APPR_NUMBER, $valProject->APPROVAL_ID, $valProject->COMP_ID, $valProject->DEPT_ID);
+                    if ($valProject->APPROVAL_STATUS == 1) {
+                        $valProject->NEXT_APPROVAL = $_approval->nextApproval($valProject->DT_APPR_NUMBER, $valProject->APPROVAL_ID, $valProject->COMP_ID, $valProject->DEPT_ID);
+                    }
                     $valProject->DETAIL = $_project->index_detail($valProject->TRANS_UUID);
                 }
                 array_push($result, $project);
@@ -267,38 +286,68 @@ class ApprovalProject extends Controller
                 array_push($finalResult, $valResult2);
             }
         }
+
+
         return response($finalResult);
     }
 
     public function actionApproval(Request $request, string $uuid)
     {
         /* Use Try Catch transaction */
-
+        $approvalBase = new ApprovalBase;
         $current_DtApproval = Detail_Approval::where([
             ['UUID', $uuid]
         ])
             ->first();
+        $msApprCode = ApprovalCode::select('APPROVAL_CODE_DESC as DESC')->where([['APPROVAL_CODE_ID', $request->approvalCode]])->firstOrFail();
         $current_DtApproval->APPROVAL_CODE_ID = $request->approvalCode;
         $current_DtApproval->DT_APPR_DATE = date('Y-m-d H:i:s');
-        $current_DtApproval->STATUS = 96; // Set status matcher //
-
-        // $current_DtApproval->LOG_ACTIVITY->append((object) [
-        //     "time" => date('Y-m-d H:i:s'),
-        //     "user" => $current_DtApproval->USER_ID,
-        //     "requestDate" => null,
-        //     "approveDate" => null,
-        //     "approveCode" => null,
-        // ]);
+        $current_DtApproval->DT_APPR_DESCRIPTION = $request->approvalCode == 4 ? null : $request->approvalReason;
+        $current_DtApproval->STATUS = $approvalBase->_apprCodeToStatus($request->approvalCode); // Set status matcher //
+        $current_DtApproval->LOG_ACTIVITY->append((object) [
+            "time" => date('Y-m-d H:i:s'),
+            "user" => $current_DtApproval->USER_ID,
+            "subject" => "Approval action",
+            "option" => [
+                "USER_ID" => $current_DtApproval->USER_ID,
+                "EMPL_ID" => $current_DtApproval->EMPL_ID,
+                "APPROVAL_CODE_ID" => $request->approvalCode,
+                "APPROVAL_STATUS_DESC" => $msApprCode->DESC,
+                "DT_APPR_REQ_DATE" => date('Y-m-d H:i:s'),
+            ]
+        ]);
         $current_DtApproval->save();
 
-        $next_DtApproval = Detail_Approval::where([
-            ['UUID', $request->nextApproval['UUID']]
-        ])->first();
-        $next_DtApproval->DT_APPR_REQ_DATE = date('Y-m-d H:i:s');
-        // $current_DtApproval->LOG_ACTIVITY = 1;
-        $current_DtApproval->STATUS = 1;
-        $current_DtApproval->save();
+        if ($request->approvalCode == 4) {
+            /* Next approval setting */
+            $nextApprovalCode = 3;
 
-        return response($next_DtApproval);
+            /* Get next approval */
+            $next_msApprCode_3 = ApprovalCode::select('APPROVAL_CODE_DESC as DESC')
+                ->where([['APPROVAL_CODE_ID', $nextApprovalCode]])
+                ->firstOrFail();
+
+            /* Set next detail approval */
+            $next_DtApproval = Detail_Approval::where([
+                ['UUID', $request->nextApproval['UUID']]
+            ])->first();
+            $next_DtApproval->APPROVAL_CODE_ID = $nextApprovalCode;
+            $next_DtApproval->DT_APPR_REQ_DATE = date('Y-m-d H:i:s');
+            $next_DtApproval->LOG_ACTIVITY->append((object) [
+                "time" => date('Y-m-d H:i:s'),
+                "user" => $next_DtApproval->USER_ID,
+                "subject" => "Approval action",
+                "option" => [
+                    "USER_ID" => $next_DtApproval->USER_ID,
+                    "EMPL_ID" => $next_DtApproval->EMPL_ID,
+                    "APPROVAL_CODE_ID" => $nextApprovalCode,
+                    "APPROVAL_STATUS_DESC" => $next_msApprCode_3->DESC,
+                    "DT_APPR_REQ_DATE" => date('Y-m-d H:i:s'),
+                ]
+            ]);
+            $next_DtApproval->STATUS = 1;
+            $next_DtApproval->save();
+        }
+        return response($request);
     }
 }

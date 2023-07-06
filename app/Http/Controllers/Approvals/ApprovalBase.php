@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Approvals;
 use App\Http\Controllers\Controller;
 use App\Models\Approvals\Approval;
 use App\Models\Approvals\SystemStructural;
+use App\Models\Master\ApprovalCode;
 use App\Models\Master\Detail_Structure;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,31 @@ class ApprovalBase extends Controller
     public $__structure = [
         "structureOnApproval" => [],
     ];
+    public function _apprCodeToStatus($key)
+    {
+        $apprStatus = [
+            2 => 0,
+            1 => 1,
+            3 => 1,
+            5 => 1,
+            7 => 1,
+            8 => 1,
+            15 => 1,
+            4 => 96,
+            6 => 96,
+            9 => 96,
+            10 => 96,
+            11 => 98,
+            12 => 96,
+            14 => 98,
+            13 => 99,
+        ];
+        return $apprStatus[$key];
+    }
+    public function _apprCode()
+    {
+        return response(ApprovalCode::select('APPROVAL_CODE_DESC')->orderBy('APPROVAL_CODE_DESC', 'asc')->get());
+    }
     public function setApproval($divStructure, $transactionType, $cleanDuplicateOpt = [])
     {
         /* Set Structure By Transaction Type */

@@ -2,6 +2,7 @@
 
 namespace App\Models\Approvals;
 
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,5 +23,9 @@ class Detail_Approval extends Model
         "DT_APPR_DEACTIVE",
         "STATUS",
         "NOTIFICATION_RESPONSE",
+        "LOG_ACTIVITY",
+    ];
+    protected $casts = [
+        'LOG_ACTIVITY' => AsArrayObject::class,
     ];
 }
