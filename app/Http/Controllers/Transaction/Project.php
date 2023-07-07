@@ -85,13 +85,13 @@ class Project extends Controller
                     "tr_approval.APPROVAL_ID",
                     "tr_approval.STATUS",
                     "tr_approval.CREATED_AT",
-                    "tr_approval.LOG_ACTIVITY",
                     "dt_approval.DT_APPR_ID",
                     "dt_approval.USER_ID",
                     "dt_approval.EMPL_ID",
                     "dt_approval.DT_APPR_REQ_DATE",
                     "dt_approval.DT_APPR_DATE",
                     "dt_approval.DT_APPR_DESCRIPTION",
+                    "dt_approval.LOG_ACTIVITY",
                     "ms_approval_code.APPROVAL_CODE_ID",
                     "ms_approval_code.APPROVAL_CODE_DESC",
                     "ms_approval_code.SYS_APPROVAL_VARIANT",
@@ -105,20 +105,19 @@ class Project extends Controller
                     ->get();
                 $row = 0;
                 foreach ($timeline as $keyTimeline => $valTimeline) {
-                    if ($row == 0) {
-                        $time = Carbon::parse($valTimeline->CREATED_AT)->translatedFormat('d F Y H:i');
-                    } else {
-                        $time = Carbon::parse($valTimeline->DT_APPR_REQ_DATE)->translatedFormat('d F Y H:i');
-                    }
                     $empl = Employee::where([['EMPL_ID', $valTimeline->EMPL_ID]])->firstOrFail();
                     $valTimeline['msStatusColor'] = $valTimeline->SYS_APPROVAL_VARIANT == "danger" ? "error" : $valTimeline->SYS_APPROVAL_VARIANT;
-                    $valTimeline['msTime'] = '[' . $valTimeline->APPROVAL_CODE_DESC . '] ' . @$time;
                     $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
+                    $time = [];
+                    foreach ($valTimeline->LOG_ACTIVITY as $keyLgAct => $valActivity) {
+                        $res = "[" . $valActivity['option']['APPROVAL_STATUS_DESC'] . "] " . Carbon::parse($valActivity['option']['DT_APPR_REQ_DATE'])->translatedFormat('d F Y H:i');
+                        array_push($time, $res);
+                    }
+                    $valTimeline['msTime'] = $time;
 
                     array_push($timelineData, $valTimeline);
                     $row = $row + 1;
                 }
-
                 $valData->PRJ_TIMELINE = $timelineData;
             }
             array_push($prjTransaction, $data);
