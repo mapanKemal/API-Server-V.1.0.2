@@ -13,6 +13,7 @@ use App\Models\Master\Structure;
 use App\Models\Transaction\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ApprovalProject extends Controller
 {
@@ -33,10 +34,10 @@ class ApprovalProject extends Controller
             ['UUID', $uuid]
         ])->firstOrFail();
         if (
-            $_Project->PRJ_TOTAL_AMOUNT_REQUEST === null ||
-            $_Project->PRJ_TOTAL_AMOUNT_REQUEST === 0 ||
-            $_Project->PRJ_TOTAL_AMOUNT_USED === null ||
-            $_Project->PRJ_TOTAL_AMOUNT_USED === 0
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == null ||
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == 0 ||
+            $_Project->PRJ_TOTAL_AMOUNT_USED == null ||
+            $_Project->PRJ_TOTAL_AMOUNT_USED == 0
         ) {
             return response([
                 "message" => "Please complete your request",
@@ -341,6 +342,27 @@ class ApprovalProject extends Controller
                 ['dt_approval.UUID', $request->nextApproval['UUID']]
             ])
             ->first();
+        if ($request->approvalCode != 4) {
+            $validate = Validator::make(
+                $request->all(),
+                [
+                    'approvalReason' => 'required|min:30'
+                ],
+                // [
+                //     // 'approvalCode.min'=> 'Minim'
+                // ]
+            );
+
+            if ($validate->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Input Validation Error',
+                    'errors' => $validate->errors()
+                ], 400);
+            }
+
+            # code...$request->approvalReason
+        }
         try {
             DB::transaction(function () use (
                 $request,

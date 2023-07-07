@@ -110,7 +110,7 @@ class Project extends Controller
                     $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
                     $time = [];
                     foreach ($valTimeline->LOG_ACTIVITY as $keyLgAct => $valActivity) {
-                        $res = "[" . $valActivity['option']['APPROVAL_STATUS_DESC'] . "] " . Carbon::parse($valActivity['option']['DT_APPR_REQ_DATE'])->translatedFormat('d F Y H:i');
+                        $res = "[" . $valActivity['option']['APPROVAL_STATUS_DESC'] . "] " . Carbon::parse($valActivity['option']['DT_APPR_DATE'] == null ? $valActivity['option']['DT_APPR_REQ_DATE'] : $valActivity['option']['DT_APPR_DATE'])->translatedFormat('d F Y H:i');
                         array_push($time, $res);
                     }
                     $valTimeline['msTime'] = $time;
