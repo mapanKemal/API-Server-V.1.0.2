@@ -22,11 +22,177 @@ class ApprovalProject extends Controller
 
     public function createApproval(Request $request, string $uuid)
     {
+        /* Project Check */
+        $_Project = Project::where([
+            ['UUID', $uuid]
+        ])->firstOrFail();
+        if (
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == null ||
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == 0
+            // || $_Project->PRJ_TOTAL_AMOUNT_USED == null || $_Project->PRJ_TOTAL_AMOUNT_USED == 0
+        ) {
+            return response([
+                "message" => "Please complete your project request",
+            ], 500);
+        } elseif (
+            $_Project->COMP_ID !== null ||
+            $_Project->DEPT_ID !== null
+        ) {
+            return response([
+                "message" => "Company or departement project is empty",
+            ], 500);
+        } elseif ($_Project->APPROVAL_ID !== null) {
+            return response([
+                "message" => "This transaction on approval progress",
+            ], 500);
+        }
+
+        /** 
+         * Create approval data
+         */
+        $approval = new ApprovalBase;
+
+        try {
+            DB::transaction(function () use (
+                $request,
+                $uuid,
+                $_Project,
+                $approval,
+            ) {
+
+                $divStructure = $this->get_DivisionStructure($approval, $_Project, $request->userId);
+                $approvalSet = $approval->setApproval($divStructure, $request->transactionType);
+
+                /* TR Approval Log Set */
+                $logTrTable = [
+                    [
+                        "Time" => date('Y-m-d H:i:s'),
+                        "User"   => "System",
+                        "RequestDate"   => null,
+                        "Subject" => "Approval structure created",
+                    ]
+                ];
+                /* Create master transaction approval */
+                $tr_approval = Approval::create([
+                    "COMP_ID" => $_Project->COMP_ID,
+                    "DEPT_ID" => $_Project->DEPT_ID,
+                    // "STATUS",
+                    // "APPR_FINAL_DATE",
+                    // "APPR_DEACTIVE",
+                    // "APPR_DEACTIVE_DATE",
+                    // "APPR_DEACTIVE_REASON",
+                    "LOG_ACTIVITY" => $logTrTable,
+                ]);
+
+                /* Create detail transaction approval */
+                $dtNumber = 0;
+                foreach ($approvalSet['structure'] as $keyClStructure => $valClStructure) {
+                    /* Get FR Employee position */
+                    $getFr = EmployeePosition::select(
+                        "USER_ID",
+                        "EMPL_ID",
+                    )->where([
+                        ['FR_POST_ID', $valClStructure]
+                    ])->firstOrFail();
+
+                    $approvalRequestDate = date('Y-m-d H:i:s');
+                    /* Save log to master transaction approval */
+                    if ($keyClStructure == 0 || $keyClStructure == 1) {
+                        $tr_approval->LOG_ACTIVITY->append((object) [
+                            "time" => $approvalRequestDate,
+                            "user" => $getFr->USER_ID,
+                            "requestDate" => $keyClStructure == 1 ? $approvalRequestDate : null,
+                            "subject" => $keyClStructure == 0 ? "New request approval" : ($keyClStructure == 1 ? "Approval request send" : null),
+                        ]);
+                        $tr_approval->save();
+                    }
+
+                    /* Create detail transaction approval */
+                    $dtNumber = $dtNumber + 1;
+                    $msApprCode = ApprovalCode::select('APPROVAL_CODE_DESC as DESC')
+                        ->where([
+                            ['APPROVAL_CODE_ID', $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1)]
+                        ])->firstOrFail();
+                    $dt_approval = Detail_Approval::create([
+                        "USER_ID" => $getFr->USER_ID,
+                        "EMPL_ID" => $getFr->EMPL_ID,
+                        "APPROVAL_ID" => $tr_approval->APPROVAL_ID,
+                        "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1), # New approval code
+                        "DT_APPR_REQ_DATE" => $keyClStructure == 0 ?
+                            $approvalRequestDate : ($keyClStructure == 1 ? $approvalRequestDate : null
+                            ),
+                        "STATUS" => $keyClStructure == 0 ? 96 : ($keyClStructure == 1 ? 1 : 0), # New approval tans status,
+                        "LOG_ACTIVITY" => [
+                            [
+                                "time" => $approvalRequestDate,
+                                "user" => $keyClStructure == 0 ? $getFr->USER_ID : ($keyClStructure == 1 ? $getFr->USER_ID : "System"),
+                                "subject" => $keyClStructure == 0 ? "Created request" : ($keyClStructure == 1 ? "Pending approval" : "Approval structure created"),
+                                "option" => [
+                                    "USER_ID" => $getFr->USER_ID,
+                                    "EMPL_ID" => $getFr->EMPL_ID,
+                                    "CAUSER" => "",
+                                    "APPROVAL_CODE_ID" => $keyClStructure == 0 ? 2 : ($keyClStructure == 1 ? 3 : 1),
+                                    "APPROVAL_STATUS_DESC" => $msApprCode->DESC,
+                                    "DT_APPR_REQ_DATE" => $approvalRequestDate,
+                                    "DT_APPR_DATE" => null,
+                                ],
+                            ]
+                        ],
+                        // "DT_APPR_DATE",
+                        // "DT_APPR_DESCRIPTION",
+                        // "DT_APPR_DEACTIVE",
+                        // "NOTIFICATION_RESPONSE",
+                    ]);
+
+                    /* Log on detail table */
+                    $dt_approval->DT_APPR_NUMBER = $dtNumber;
+                    $dt_approval->save();
+
+                    /* Send mail notification */
+                    # Code...
+                }
+
+                /* Set Structure On Approval */
+                $sequence = 0;
+                foreach ($approvalSet['structureOnApproval'] as $keyStructId => $valStructId) {
+                    $sequence = $sequence + 1;
+                    Structure_Approval::create([
+                        "STRUCTURE_ID" => $valStructId,
+                        "APPROVAL_ID" => $tr_approval->APPROVAL_ID,
+                        "STURCT_APP_SEQUENCE" => $sequence,
+                    ]);
+                }
+
+                /* Update Project Data */
+                $_Project->APPROVAL_ID = $tr_approval->APPROVAL_ID;
+                $_Project->STATUS = 1; # On progress status
+                $_Project->save();
+
+                /* Set approval for detail project transaction */
+                # Code...
+
+                /* Done project approval */
+            });
+            DB::commit();
+            return response($_Project, 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
+    }
+    public function createUpdateApproval(Request $request, string $uuid)
+    {
         /* Update Project Transaction */
         $transProject = new TransactionProject;
         $setTransProject = $transProject->createFromApproval($request, $uuid);
         if (!$setTransProject) {
-            return response($setTransProject, 500);
+            return response([
+                "message" => "Cannot update transaction",
+            ], 500);
         }
 
         /* Project Check */
@@ -35,19 +201,24 @@ class ApprovalProject extends Controller
         ])->firstOrFail();
         if (
             $_Project->PRJ_TOTAL_AMOUNT_REQUEST == null ||
-            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == 0 ||
-            $_Project->PRJ_TOTAL_AMOUNT_USED == null ||
-            $_Project->PRJ_TOTAL_AMOUNT_USED == 0
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST == 0
+            // || $_Project->PRJ_TOTAL_AMOUNT_USED == null || $_Project->PRJ_TOTAL_AMOUNT_USED == 0
         ) {
             return response([
-                "message" => "Please complete your request",
+                "message" => "Please complete your project request",
+            ], 500);
+        } elseif (
+            $_Project->COMP_ID !== null ||
+            $_Project->DEPT_ID !== null
+        ) {
+            return response([
+                "message" => "Company or departement project is empty",
             ], 500);
         } elseif ($_Project->APPROVAL_ID !== null) {
             return response([
                 "message" => "This transaction on approval progress",
             ], 500);
         }
-
         /** 
          * Create approval data
          */
@@ -349,7 +520,7 @@ class ApprovalProject extends Controller
                     'approvalReason' => 'required|min:30'
                 ],
                 // [
-                //     // 'approvalCode.min'=> 'Minim'
+                //     'approvalCode.min'=> 'Minim'
                 // ]
             );
 
@@ -360,8 +531,6 @@ class ApprovalProject extends Controller
                     'errors' => $validate->errors()
                 ], 400);
             }
-
-            # code...$request->approvalReason
         }
         try {
             DB::transaction(function () use (

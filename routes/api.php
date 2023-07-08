@@ -91,17 +91,19 @@ Route::middleware('auth:api')->group(function () {
             Route::get('detailByHeader/{uuid}', [Project::class, 'index_detailByHeader']);
             Route::get('EditData/{uuid}', [Project::class, 'modalEditData']);
             Route::post('save/{uuid}', [Project::class, 'create']);
-            // Route::post('delete/{uuid}', [Project::class, 'create']);
-            Route::prefix('approval')->group(function () {
-                Route::post('request/{uuid}', [ApprovalProject::class, 'createApproval']);
-
-                Route::post('/', [ApprovalProject::class, 'index_approvalTable']);
-                Route::post('action/{uuid}', [ApprovalProject::class, 'actionApproval']);
-            });
+            Route::post('delete/{uuid}', [Project::class, 'delete']);
 
             Route::post('createHeader', [Project::class, 'create_header']);
             Route::post('createDetail', [Project::class, 'create_detail']);
             Route::post('updateHeader/{uuid}', [Project::class, 'update_header']);
+
+            Route::prefix('approval')->group(function () {
+                Route::post('request/{uuid}', [ApprovalProject::class, 'createUpdateApproval']);
+                Route::post('request/btAction/{uuid}', [ApprovalProject::class, 'createApproval']);
+
+                Route::post('/', [ApprovalProject::class, 'index_approvalTable']);
+                Route::post('action/{uuid}', [ApprovalProject::class, 'actionApproval']);
+            });
         });
     });
 });
