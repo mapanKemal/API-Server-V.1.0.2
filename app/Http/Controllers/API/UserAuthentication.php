@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
+use Spatie\Activitylog\Models\Activity;
 
 class UserAuthentication extends Controller
 {
@@ -181,10 +182,16 @@ class UserAuthentication extends Controller
             $userToken = $user->createToken('authToken');
             $tokenId = $userToken->token->id;
             $accessToken = $userToken->accessToken;
+
+            /* Log */
+            activity('Authentication')
+                ->causedBy(Auth::user())
+                ->event('Login')
+                ->log('Login succesfull');
             /* And Then */
             return response()->json([
                 'status' => true,
-                'message' => 'User Logged In Successfully',
+                'message' => 'User Logged In Successfull',
                 'token_id' => $tokenId,
                 'access_token' => $accessToken,
                 'user'  => $result
@@ -263,10 +270,27 @@ class UserAuthentication extends Controller
      */
     public function logout(string $tokensId)
     {
-        Token::where('id', $tokensId)
-            ->update(['revoked' => true]);
-        RefreshToken::where('access_token_id', $tokensId)->update(['revoked' => true]);
-        return response('Logout Success', 200);
+
+        try {
+            DB::transaction(function () use ($tokensId) {
+                activity('Authentication')
+                    ->causedBy(Auth::user())
+                    ->event('Logout')
+                    ->log('Logout account and revoke token');
+                Token::where('id', $tokensId)
+                    ->update(['revoked' => true]);
+                RefreshToken::where('access_token_id', $tokensId)->update(['revoked' => true]);
+            });
+            DB::commit();
+            return response('Logout Success', 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
     }
 
     /**

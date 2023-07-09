@@ -83,7 +83,10 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('transaction')->group(function () {
         Route::prefix('project')->group(function () {
             Route::apiResource('/', Project::class);
-            Route::post('newTransaction', [Project::class, 'index_newTransaction']);
+            Route::prefix('newTransaction')->group(function () {
+                Route::post('/', [Project::class, 'index_newTransaction']);
+                Route::post('delete/{uuid}', [Project::class, 'destroy_project']);
+            });
             Route::post('onProgress', [Project::class, 'index_empTransProgress']);
 
 
@@ -91,7 +94,6 @@ Route::middleware('auth:api')->group(function () {
             Route::get('detailByHeader/{uuid}', [Project::class, 'index_detailByHeader']);
             Route::get('EditData/{uuid}', [Project::class, 'modalEditData']);
             Route::post('save/{uuid}', [Project::class, 'create']);
-            Route::post('delete/{uuid}', [Project::class, 'delete']);
 
             Route::post('createHeader', [Project::class, 'create_header']);
             Route::post('createDetail', [Project::class, 'create_detail']);

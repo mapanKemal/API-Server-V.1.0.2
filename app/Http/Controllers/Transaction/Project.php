@@ -12,6 +12,7 @@ use App\Models\Transaction\Project as TransactionProject;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
@@ -606,8 +607,54 @@ class Project extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy_project(Request $request, string $uuid)
     {
-        //
+        $_Project = TransactionProject::where([['UUID', $uuid]])->firstOrFail();
+
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'deleteReason' => 'required',
+            ],
+            [
+                'deleteReason.required' => "Complete your delete reason"
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Input Validation Error',
+                'errors' => $validateUser->errors()
+            ], 400);
+        }
+        try {
+            DB::transaction(function () use ($request, $_Project) {
+                /* Project updates */
+                $_Project->TRANS_TY_ID = $_Project->transactionType;
+                $_Project->PRJ_DELETE = 1;
+                $_Project->PRJ_DELETE_DATE = date('Y-m-d H:i:s');
+                $_Project->PRJ_DELETE_REASON = $request->deleteReason;
+                $_Project->PRJ_DELETE_BY = Auth::user();
+
+                $_Project->save();
+
+                /* Log */
+                activity('Transaction')
+                    ->causedBy(Auth::user())
+                    ->event('Delete')
+                    ->performedOn($_Project)
+                    ->log('Delete project request transaction');
+            });
+            DB::commit();
+            return response($_Project, 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
     }
 }
