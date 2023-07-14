@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
-use Spatie\Activitylog\Models\Activity;
 
 class UserAuthentication extends Controller
 {
