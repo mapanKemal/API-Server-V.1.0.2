@@ -90,6 +90,10 @@ class UserAuthentication extends Controller
                 'username' => 'required',
                 'password' => 'required',
                 // 'identity' => 'required',
+            ],
+            [
+                'username.required' => "Require username or password",
+                'password.required' => "Require username or password",
             ]
         );
 
@@ -129,7 +133,6 @@ class UserAuthentication extends Controller
             ->whereIn('ms_users.STATUS', [0, 100])
             ->first();
         try {
-
             if (is_null($user->PASSWORD_VERIFIED_AT)) {
                 return response([
                     'status' => false,
@@ -143,6 +146,7 @@ class UserAuthentication extends Controller
                     'message' => 'Employee not found or not active, please contact Administrator',
                 ], 400);
             }
+
             $user->LAST_LOGIN_AT = $request->lastLogin == null ? now() : $request->lastLogin;
             $user->save();
             /* Set User Data */
@@ -162,6 +166,7 @@ class UserAuthentication extends Controller
                 "EMPL_CONFIG" => $user->EMPL_CONFIG,
                 "LAST_LOGIN_AT" => $user->LAST_LOGIN_AT,
             ];
+
             /* Set User Structure */
             $userStructure_dep = EmployeePosition::select(
                 "fr_employee_position.COMP_ID",
@@ -176,6 +181,7 @@ class UserAuthentication extends Controller
                 ->join('ms_company as CMP', 'CMP.COMP_ID', '=', 'fr_employee_position.COMP_ID')
                 ->groupBy('fr_employee_position.COMP_ID', 'fr_employee_position.DEPT_ID')
                 ->get();
+
             $result['EMP_STRUCTURE'] = $userStructure_dep;
 
             $userToken = $user->createToken('authToken');

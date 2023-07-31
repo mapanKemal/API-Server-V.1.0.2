@@ -71,7 +71,7 @@ Route::middleware('auth:api')->group(function () {
 
         /* Other */
         Route::prefix('transtype')->group(function () {
-            Route::get('projectType/{id}', [TransactionType::class, 'show_projectType']);
+            Route::get('projectType/{transCode}', [TransactionType::class, 'show_projectType']);
             Route::get('projectSubType/{id}', [TransactionType::class, 'show_projectSubType']);
             Route::get('projectSubDtType/{id}', [TransactionType::class, 'show_projectSubDtType']);
         });

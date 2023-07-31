@@ -8,6 +8,7 @@ use App\Models\Approvals\Detail_Approval;
 use App\Models\Master\Company;
 use App\Models\Master\Departement;
 use App\Models\Master\Employee;
+use App\Models\Transaction\DtProject;
 use App\Models\Transaction\Project as TransactionProject;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Http\Request;
@@ -187,92 +188,35 @@ class Project extends Controller
 
     public function index_detailByHeader(string $uuid)
     {
-        //
-        $result = [
-            "HEADER" => [],
-            "DETAIL" => [],
-        ];
+        // secara operational bisa enak
+        $result = [];
 
-        $result['HEADER'] = TransactionProject::where('UUID', $uuid)->firstOrFail();
-        /* CADV Loop */
-        $cadv = TransactionProject::select(
-            'tr_cash_advanced.APPROVAL_ID',
-            'tr_cash_advanced.APPROVAL_CODE_ID',
-            'tr_cash_advanced.TRANS_TY_ID',
-            'tr_cash_advanced.CADV_ID',
-            'tr_cash_advanced.UUID',
-            'tr_cash_advanced.CADV_NUMBER',
-            'tr_cash_advanced.CADV_SUBJECT',
-            'tr_cash_advanced.CADV_NOTES',
-            'tr_cash_advanced.CADV_AMOUNT',
-            'tr_cash_advanced.CADV_ATTACHMENT',
-            'tr_cash_advanced.STATUS',
-            'tr_cash_advanced.CREATED_AT',
-            'b.TRANS_TY_NAME as TYPE_1',
-            'a.TRANS_TY_NAME as TYPE_2',
-            'c.DT_TRANS_TY_NAME as TYPE_DT',
+        /* Set Update Project Amount */
+        $detailProject = DtProject::select(
+            'dt_project_request.*',
+            'a.*',
+            'b.*'
         )
-            ->where('tr_project_request.UUID', $uuid)
-            ->join('tr_cash_advanced', 'tr_project_request.PRJ_ID', 'tr_cash_advanced.PRJ_ID')
-            ->join('ms_transaction_type as a', 'tr_cash_advanced.TRANS_TY_ID', 'a.TRANS_TY_ID')
-            ->join('ms_transaction_type as b', 'a.SUB_TRANS_TY_ID', 'b.TRANS_TY_ID')
-            ->leftjoin('dt_transaction_type as c', 'tr_project_request.DT_TRANS_TY_ID', 'c.DT_TRANS_TY_ID')
+            ->join('tr_project_request', 'dt_project_request.PRJ_ID', 'tr_project_request.PRJ_ID')
+            ->join('ms_transaction_type as a', 'dt_project_request.TRANS_TY_ID', 'a.TRANS_TY_ID')
+            ->leftjoin('dt_transaction_type as b', 'dt_project_request.DT_TRANS_TY_ID', 'b.DT_TRANS_TY_ID')
+            ->where([
+                ['tr_project_request.UUID', $uuid]
+            ])
             ->get();
-        foreach ($cadv as $keyCadv => $valCadv) {
+        foreach ($detailProject as $key => $val_DtProject) {
             $data = [
-                'APPROVAL_ID' => $valCadv->APPROVAL_ID,
-                'APPROVAL_CODE_ID' => $valCadv->APPROVAL_CODE_ID,
-                'TRANSACTION_PRJ_ID' => $valCadv->CADV_ID,
-                'TRANSACTION_TYPE' => $valCadv->TYPE_1 . ' [' . $valCadv->TYPE_2 . ']',
-                'TRANSACTION_DT_TYPE' => $valCadv->TYPE_DT,
-                'TRANSACTION_UUID' => $valCadv->UUID,
-                'TRANSACTION_NUMBER' => $valCadv->CADV_NUMBER,
-                'TRANSACTION_SUBJECT' => $valCadv->CADV_SUBJECT,
-                'TRANSACTION_NOTES' => $valCadv->CADV_NOTES,
-                'TRANSACTION_AMOUNT' => $valCadv->CADV_AMOUNT,
-                'TRANSACTION_ATTACHMENT' => $valCadv->CADV_ATTACHMENT,
-                'TRANSACTION_STATUS' => $valCadv->STATUS,
-                'TRANSACTION_REQUESTED_AT' => $valCadv->CREATED_AT,
+                'TRANSACTION_PRJ_ID' => $val_DtProject->PRJ_ID,
+                'TRANSACTION_TYPE' => '[' . $val_DtProject->TRANS_TY_NAME . '] ' . $val_DtProject->DT_TRANS_TY_NAME,
+                'TRANSACTION_UUID' => $val_DtProject->UUID,
+                'TRANSACTION_SUBJECT' => $val_DtProject->DTPRJ_SUBJECT,
+                'TRANSACTION_AMOUNT' => $val_DtProject->DTPRJ_AMOUNT,
+                'TRANSACTION_STATUS' => $val_DtProject->STATUS,
+                'TRANSACTION_DUE' => $val_DtProject->DTPRJ_DUE_DATE,
+                'TRANSACTION_REQUESTED_AT' => $val_DtProject->CREATED_AT,
             ];
-            array_push($result['DETAIL'], $data);
+            array_push($result, $data);
         }
-
-        /* REIMB Loop */
-        // $reimb = TransactionProject::select(
-        //     'tr_reimbursement.APPROVAL_ID',
-        //     'tr_reimbursement.APPROVAL_CODE_ID',
-        //     'tr_reimbursement.TRANS_TY_ID',
-        //     'tr_reimbursement.REIMB_ID',
-        //     'tr_reimbursement.UUID',
-        //     'tr_reimbursement.REIMB_NUMBER',
-        //     'tr_reimbursement.REIMB_SUBJECT',
-        //     'tr_reimbursement.REIMB_NOTES',
-        //     'tr_reimbursement.REIMB_AMOUNT',
-        //     'tr_reimbursement.REIMB_ATTACHMENT',
-        //     'tr_reimbursement.STATUS',
-        // )
-        //     ->where('tr_project_request.UUID', $uuid)
-        //     ->join('tr_reimbursement', 'tr_project_request.PRJ_ID', 'tr_reimbursement.PRJ_ID')
-        //     ->join('ms_transaction_type as a', 'tr_reimbursement.TRANS_TY_ID', 'a.TRANS_TY_ID')
-        //     ->join('ms_transaction_type as b', 'a.SUB_TRANS_TY_ID', 'b.TRANS_TY_ID')
-        //     ->get();
-        // foreach ($reimb as $keyReimb => $valReimb) {
-        //     $data = [
-        //         'APPROVAL_ID' => $valReimb->APPROVAL_ID,
-        //         'APPROVAL_CODE_ID' => $valReimb->APPROVAL_CODE_ID,
-        //         'TRANSACTION_TYPE' => $valReimb->TRANS_TY_ID,
-        //         'TRANSACTION_ID' => $valReimb->REIMB_ID,
-        //         'TRANSACTION_UUID' => $valReimb->UUID,
-        //         'TRANSACTION_SUBJECT' => $valReimb->REIMB_SUBJECT,
-        //         'TRANSACTION_NUMBER' => $valReimb->REIMB_NUMBER,
-        //         'TRANSACTION_AMOUNT' => $valReimb->REIMB_AMOUNT,
-        //         'TRANSACTION_NOTES' => $valReimb->REIMB_NOTES,
-        //         'TRANSACTION_ATTACHMENT' => $valReimb->REIMB_ATTACHMENT,
-        //         'TRANSACTION_STATUS' => $valReimb->STATUS,
-        //     ];
-        //     array_push($result['Detail'], $data);
-        // }
-
         return response($result);
     }
     public function index_detail(string $uuid)
@@ -514,9 +458,7 @@ class Project extends Controller
             ], 500);
         }
         $data = $transaction->select(
-            'tr_project_request.UUID',
-            'tr_project_request.PRJ_NUMBER',
-            'tr_project_request.EMPL_ID',
+            'tr_project_request.*',
             'ms_company.COMP_CODE',
             'ms_company.COMP_NAME',
             'ms_departement.DEPT_CODE',
@@ -562,51 +504,43 @@ class Project extends Controller
 
     public function create_detail(Request $request)
     {
-
-        /* Explode Grouping ID */
-        $transType = $request->transactionType;
-        $transCode = explode("_", $request->group1);
-        $transTypePrimary = $transCode[array_key_first($transCode)];
-        $transTypeSecondary = $transCode[array_key_last($transCode)];
-        if ($request->secondaryGroup != null) {
-            $transTypeSecondary = $request->secondaryGroup;
-        }
-
         /* Set Update Project Amount */
         $_Project = TransactionProject::where([['UUID', $request->projectUuid]])->firstOrFail();
-        $_company = Company::where([['COMP_CODE', $request->companyCode]])->firstOrFail();
-        $_departement = Departement::where([['DEPT_CODE', $request->deptartementCode]])->firstOrFail();
+        try {
+            DB::transaction(function () use ($request, $_Project) {
+                activity('Authentication')
+                    ->causedBy(Auth::user())
+                    ->event('')
+                    ->log('Create detail project ' . $_Project->PRJ_NUMBER);
 
-        if ($transTypePrimary == $this->advance_transTyId) {
-            /* If Transaction Is CASH ADVANCED */
-            $advanced = new CashAdvanced;
-            $createTrans = $advanced->create_fromProject([
-                "EMPL_ID" => $request->employeeId,
-                "TRANS_TY_ID" => $transTypeSecondary,
-                "DT_TRANS_TY_ID" => $request->detailingGroup,
-                "PRJ_ID" => $_Project->PRJ_ID,
-                "CADV_SUBJECT" => $request->subject,
-                "CADV_NOTES" => $request->description,
-                "CADV_AMOUNT" => $request->amountRequest,
-                "CADV_DUE_DATE" => $request->dueDate,
-                "CADV_ATTACHMENT" => null,
-                "CADV_ATTACHMENT_SIZE" => 0,
-            ], [
-                "COMP_ID" => $_company->COMP_ID,
-                "COMP_CODE" => $request->companyCode,
+                DtProject::create([
+                    "PRJ_ID" => $_Project->PRJ_ID,
+                    "TRANS_TY_ID" => $request->group2,
+                    "DT_TRANS_TY_ID" => $request->group3,
+                    "DTPRJ_SUBJECT" => $request->subject,
+                    "DTPRJ_AMOUNT" => $request->amountRequest,
+                    "DTPRJ_TOTAL_AMOUNT_USED" => $request->amountRequest,
+                    "DTPRJ_DUE_DATE" => $request->dueDate,
+                ]);
+            });
 
-                "DEPT_ID" => $_departement->DEPT_ID,
-                "DEPT_CODE" => $request->deptartementCode,
-            ]);
-        } elseif ($transTypePrimary == $this->reimburse_transTyId) {
-            /* If Transaction Is REIMBURSEMENT */
+            /* Update project amount */
+            $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->amountRequest;
+            $_Project->save();
+
+            DB::commit();
+            return response([], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
         }
 
-        $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->amountRequest;
-        $_Project->save();
-
         // return response($request);
-        return response($_Project);
+        // return response($_Project);
     }
 
     /**

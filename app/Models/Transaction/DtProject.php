@@ -17,10 +17,14 @@ class DtProject extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        "PRJ_ID",
         "DTPRJ_SUBJECT",
+        "TRANS_TY_ID",
+        "DT_TRANS_TY_ID",
         "DTPRJ_AMOUNT",
         "DTPRJ_TOTAL_AMOUNT_USED",
         "DTPRJ_DIFF_AMOUNT",
+        "DTPRJ_DUE_DATE",
         "DTPRJ_CLOSE",
         "DTPRJ_CLOSE_DATE",
         "DTPRJ_DELETE",

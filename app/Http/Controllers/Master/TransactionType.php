@@ -40,27 +40,31 @@ class TransactionType extends Controller
     // {
     //     //
     // }
-    public function show_projectType(string $id)
+    public function show_projectType(string $transCode)
     {
         //
         $result = [];
-        $transMType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('SUB_TRANS_TY_ID', $id)->get();
+        $transMType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('TRANS_CODE', $transCode)->get();
         foreach ($transMType as $keyMType => $valMType) {
-            $transSbType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('SUB_TRANS_TY_ID', $valMType->TRANS_TY_ID)->get();
-            if (count($transSbType) <= 0) {
-                $res = [
-                    "value" => $valMType->TRANS_TY_ID,
-                    "label" => $valMType->TRANS_TY_NAME
-                ];
-                array_push($result, $res);
-            }
-            foreach ($transSbType as $keySbType => $valSbType) {
-                $res = [
-                    "value" => $valMType->TRANS_TY_ID . '_' . $valSbType->TRANS_TY_ID,
-                    "label" => $valMType->TRANS_TY_NAME . ' [' . $valSbType->TRANS_TY_NAME . ']'
-                ];
-                array_push($result, $res);
-            }
+            array_push($result, [
+                "value" => $valMType->TRANS_TY_ID,
+                "label" => $valMType->TRANS_TY_NAME
+            ]);
+            // $transSbType = MasterTransactionType::select('TRANS_TY_ID', 'TRANS_TY_NAME')->where('SUB_TRANS_TY_ID', $valMType->TRANS_TY_ID)->get();
+            // if (count($transSbType) <= 0) {
+            //     $res = [
+            //         "value" => $valMType->TRANS_TY_ID,
+            //         "label" => $valMType->TRANS_TY_NAME
+            //     ];
+            //     array_push($result, $res);
+            // }
+            // foreach ($transSbType as $keySbType => $valSbType) {
+            //     $res = [
+            //         "value" => $valMType->TRANS_TY_ID . '_' . $valSbType->TRANS_TY_ID,
+            //         "label" => $valMType->TRANS_TY_NAME . ' [' . $valSbType->TRANS_TY_NAME . ']'
+            //     ];
+            //     array_push($result, $res);
+            // }
         }
         return response($result);
     }
