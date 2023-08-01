@@ -134,33 +134,23 @@ class Project extends Controller
 
     public function index_newTransaction(Request $request)
     {
-        $queryResult = [];
-        $result_2 = [];
-        foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
-            $data = TransactionProject::select(
-                "tr_project_request.*",
-                "ms_company.COMP_CODE",
-                "ms_company.COMP_NAME",
-                "ms_departement.DEPT_CODE",
-                "ms_departement.DEPT_NAME",
-            )
-                ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
-                ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
-                ->where([
-                    ['tr_project_request.STATUS', 0],
-                    ['tr_project_request.EMPL_ID', $request->employeeId],
-                    ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
-                    ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']]
-                ])
-                ->get();
-            array_push($queryResult, $data);
-        }
-        foreach ($queryResult as $key => $val_1) {
-            foreach ($val_1 as $key => $val_2) {
-                array_push($result_2, $val_2);
-            }
-        }
-        return response($result_2);
+        $result = TransactionProject::select(
+            "tr_project_request.*",
+            "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
+            "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
+        )
+            ->join('fr_employee_position', 'tr_project_request.EMPL_ID', '=', 'fr_employee_position.EMPL_ID')
+            ->leftJoin('ms_company', 'fr_employee_position.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->leftJoin('ms_departement', 'fr_employee_position.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where([
+                ['tr_project_request.STATUS', 0],
+                ['tr_project_request.EMPL_ID', $request->employeeId],
+            ])
+            ->get();
+
+        return response($result);
     }
     public function index_transByHeader(string $uuid)
     {
