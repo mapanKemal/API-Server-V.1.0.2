@@ -142,7 +142,7 @@ class ApprovalBase extends Controller
                 ['tr_approval.DEPT_ID', $deptId],
                 ['dt_approval.DT_APPR_NUMBER', ($lastApprNumber + 1)],
                 ['dt_approval.APPROVAL_CODE_ID', 1],
-            ])->firstOrFail();
+            ])->first();
     }
 
     private function setSystemStructure($transactionType)
@@ -163,7 +163,7 @@ class ApprovalBase extends Controller
                     ["ACTIVE", 1],
                 ])
                 ->orderBy('STRUCTURE_NUMBER', 'asc')
-                ->firstOrFail();
+                ->first();
 
             /* Set used structure */
             array_push($this->__structure['structureOnApproval'], $structures->STRUCTURE_ID);

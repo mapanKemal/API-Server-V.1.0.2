@@ -168,14 +168,6 @@ class Project extends Controller
             ->firstOrFail());
     }
 
-    // public function index_detailByHeader(string $uuid)
-    // {
-    //     $result = [
-    //         "HEADER" => [],
-    //         "DETAIL" => [],
-    //     ];
-    // }
-
     public function index_detailByHeader(string $uuid)
     {
         // secara operational bisa enak
@@ -356,21 +348,17 @@ class Project extends Controller
     {
         //
         $_Project = TransactionProject::where([['UUID', $uuid]])->firstOrFail();
-        $_company = Company::where([['COMP_CODE', $request->companyCode]])->firstOrFail();
-        $_departement = Departement::where([['DEPT_CODE', $request->deptartementCode]])->firstOrFail();
 
         /* Project updates */
         $_Project->TRANS_TY_ID = $request->transactionType;
         $_Project->EMPL_ID = $request->employeeId;
-        $_Project->DEPT_ID = $_departement->DEPT_ID;
-        $_Project->COMP_ID = $_company->COMP_ID;
         $_Project->PRJ_SUBJECT = $request->subject;
         $_Project->PRJ_NOTES = $request->description;
-        $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amountRequest == null ? 0 : $request->amountRequest;
+        $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $request->amount == null ? 0 : $request->amount;
         $_Project->PRJ_REQUEST_DATE = date('Y-m-d');
         $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
         $_Project->PRJ_CLOSE_DATE = date('Y-m-d', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
-        // $_Project->PRJ_ATTTACHMENT = $request->;
+        // $_Project->PRJ_ATTTACHMENT = $request->attachment;
         // $_Project->PRJ_ATTTACHMENT_EXT = $request->;
         // $_Project->PRJ_ATTTACHMENT_SIZE = $request->;
         $_Project->save();
@@ -515,7 +503,8 @@ class Project extends Controller
             });
 
             /* Update project amount */
-            $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->amountRequest;
+            // $_Project->PRJ_TOTAL_AMOUNT_USED = $_Project->PRJ_TOTAL_AMOUNT_USED + $request->amountRequest;
+            $_Project->PRJ_TOTAL_AMOUNT_REQUEST = $_Project->PRJ_TOTAL_AMOUNT_REQUEST + $request->amountRequest;
             $_Project->save();
 
             DB::commit();
@@ -539,15 +528,11 @@ class Project extends Controller
     public function update_header(Request $request, string $uuid)
     {
         // $deptCode = $request->
+        $getProject = TransactionProject::where('UUID', $uuid)->firstOrFail();
 
-        $idConfig = [
-            'table' => 'tr_project_request',
-            'field' => 'PRJ_NUMBER',
-            'length' => 11,
-            'prefix' => date('Ym') . '/',
-            'reset_on_prefix_change' => true
-        ];
         if ($request->companyCode !== null && $request->departCode !== null) {
+            $_company = Company::select('COMP_ID')->where([['COMP_CODE', $request->companyCode]])->firstOrFail();
+            $_departement = Departement::select('DEPT_ID')->where([['DEPT_CODE', $request->departCode]])->firstOrFail();
             $idConfig = [
                 'table' => 'tr_project_request',
                 'field' => 'PRJ_NUMBER',
@@ -555,8 +540,20 @@ class Project extends Controller
                 'prefix' => $request->companyCode . '/' . $request->departCode . '/' . date('Ym') . '/',
                 'reset_on_prefix_change' => true
             ];
+            $getProject->COMP_ID = $_company->COMP_ID;
+            $getProject->DEPT_ID = $_departement->DEPT_ID;
+        } else {
+            $idConfig = [
+                'table' => 'tr_project_request',
+                'field' => 'PRJ_NUMBER',
+                'length' => 11,
+                'prefix' => date('Ym') . '/',
+                'reset_on_prefix_change' => true
+            ];
+            $getProject->COMP_ID = null;
+            $getProject->DEPT_ID = null;
         }
-        $getProject = TransactionProject::where('UUID', $uuid)->firstOrFail();
+
         $getProject->PRJ_NUMBER = IdGenerator::generate($idConfig);
         $getProject->save();
 
