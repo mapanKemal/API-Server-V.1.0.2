@@ -203,54 +203,26 @@ class Project extends Controller
     }
     public function index_detail(string $uuid)
     {
-        //
+        /* Detail project */
         $result = [];
-
-        /* CADV Loop */
-        $cadv = TransactionProject::select(
-            'tr_cash_advanced.APPROVAL_ID',
-            'tr_cash_advanced.APPROVAL_CODE_ID',
-            'tr_cash_advanced.TRANS_TY_ID',
-            'tr_cash_advanced.CADV_ID',
-            'tr_cash_advanced.UUID',
-            'tr_cash_advanced.CADV_NUMBER',
-            'tr_cash_advanced.CADV_SUBJECT',
-            'tr_cash_advanced.CADV_NOTES',
-            'tr_cash_advanced.CADV_AMOUNT',
-            'tr_cash_advanced.CADV_ATTACHMENT',
-            'tr_cash_advanced.STATUS',
-            'tr_cash_advanced.CREATED_AT',
-            'b.TRANS_TY_NAME as TYPE_1',
-            'a.TRANS_TY_NAME as TYPE_2',
-            'c.DT_TRANS_TY_NAME as TYPE_DT',
+        $detailProject = TransactionProject::select(
+            'dt_project_request.*',
+            'ms_transaction_type.*',
+            'dt_transaction_type.*'
         )
-            ->where('tr_project_request.UUID', $uuid)
-            ->join('tr_cash_advanced', 'tr_project_request.PRJ_ID', 'tr_cash_advanced.PRJ_ID')
-            ->join('ms_transaction_type as a', 'tr_cash_advanced.TRANS_TY_ID', 'a.TRANS_TY_ID')
-            ->join('ms_transaction_type as b', 'a.SUB_TRANS_TY_ID', 'b.TRANS_TY_ID')
-            ->leftjoin('dt_transaction_type as c', 'tr_project_request.DT_TRANS_TY_ID', 'c.DT_TRANS_TY_ID')
+            ->join('dt_project_request', 'dt_project_request.PRJ_ID', '=', 'tr_project_request.PRJ_ID')
+            ->join('ms_transaction_type', 'dt_project_request.TRANS_TY_ID', '=', 'ms_transaction_type.TRANS_TY_ID')
+            ->join('dt_transaction_type', 'dt_project_request.DT_TRANS_TY_ID', '=', 'dt_transaction_type.DT_TRANS_TY_ID')
+            ->where([['tr_project_request.UUID', $uuid]])
             ->get();
-        foreach ($cadv as $keyCadv => $valCadv) {
-            $data = [
-                'APPROVAL_ID' => $valCadv->APPROVAL_ID,
-                'APPROVAL_CODE_ID' => $valCadv->APPROVAL_CODE_ID,
-                'TRANSACTION_ID' => $valCadv->CADV_ID,
-                'TRANSACTION_UUID' => $valCadv->UUID,
-                'TRANSACTION_TYPE' => $valCadv->TYPE_1 . ' [' . $valCadv->TYPE_2 . ']',
-                'TRANSACTION_DT_TYPE' => $valCadv->TYPE_DT,
-                'TRANSACTION_NUMBER' => $valCadv->CADV_NUMBER,
-                'TRANSACTION_SUBJECT' => $valCadv->CADV_SUBJECT,
-                'TRANSACTION_NOTES' => $valCadv->CADV_NOTES,
-                'TRANSACTION_AMOUNT' => $valCadv->CADV_AMOUNT,
-                'TRANSACTION_ATTACHMENT' => $valCadv->CADV_ATTACHMENT,
-                'TRANSACTION_STATUS' => $valCadv->STATUS,
-                'TRANSACTION_REQUESTED_AT' => $valCadv->CREATED_AT,
-            ];
-            array_push($result, $data);
+        foreach ($detailProject as $key => $valDtProj) {
+            array_push($result, [
+                "TRANSACTION_UUID" => $valDtProj->UUID,
+                "TRANSACTION_TYPE" => "[" . $valDtProj->TRANS_TY_NAME . "] " . $valDtProj->DT_TRANS_TY_NAME,
+                "TRANSACTION_SUBJECT" => $valDtProj->DTPRJ_SUBJECT,
+                "TRANSACTION_AMOUNT" => $valDtProj->DTPRJ_AMOUNT,
+            ]);
         }
-
-        /* REIMB Loop */
-
         return $result;
     }
 

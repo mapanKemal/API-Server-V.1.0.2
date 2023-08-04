@@ -100,8 +100,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('updateHeader/{uuid}', [Project::class, 'update_header']);
 
             Route::prefix('approval')->group(function () {
-                // Route::post('request/{uuid}', [ApprovalProject::class, 'createUpdateApproval']);
                 Route::post('request/{uuid}', [ApprovalProject::class, 'createApproval']);
+                // Route::post('request/{uuid}', [ApprovalProject::class, 'createUpdateApproval']);
                 // Route::post('request/btAction/{uuid}', [ApprovalProject::class, 'createApproval']);
 
                 Route::post('/', [ApprovalProject::class, 'index_approvalTable']);
