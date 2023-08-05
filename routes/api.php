@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\UserAuthentication;
 use App\Http\Controllers\Approvals\ApprovalBase;
 use App\Http\Controllers\Approvals\ApprovalProject;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Master\Employee;
 use App\Http\Controllers\Master\Setup_Company;
 use App\Http\Controllers\Master\Structure;
@@ -108,5 +109,10 @@ Route::middleware('auth:api')->group(function () {
                 Route::post('action/{uuid}', [ApprovalProject::class, 'actionApproval']);
             });
         });
+    });
+
+    Route::prefix('attachment')->group(function () {
+        Route::post('upload', [AttachmentController::class, 'uploadAttachment']);
+        // Route::get('view/{attachmentName}', [AttachmentController::class, 'uploadAttachment']);
     });
 });

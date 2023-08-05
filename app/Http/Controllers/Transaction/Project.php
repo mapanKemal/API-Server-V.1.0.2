@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Transaction;
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Controller;
 use App\Models\Approvals\Approval;
 use App\Models\Approvals\Detail_Approval;
@@ -330,9 +331,14 @@ class Project extends Controller
         $_Project->PRJ_REQUEST_DATE = date('Y-m-d');
         $_Project->PRJ_DUE_DATE = date('Y-m-d', strtotime($request->dueDate));
         $_Project->PRJ_CLOSE_DATE = date('Y-m-d', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
-        // $_Project->PRJ_ATTTACHMENT = $request->attachment;
-        // $_Project->PRJ_ATTTACHMENT_EXT = $request->;
-        // $_Project->PRJ_ATTTACHMENT_SIZE = $request->;
+
+        /* Attachment */
+        $attachment = new AttachmentController;
+        $extension = $request->file('attachment')->getExtension();
+        $makeAttachment = $attachment->OFuploadImage($request->attachment, 'Project', $extension);
+        $_Project->PRJ_ATTTACHMENT = $makeAttachment['filename'];
+        $_Project->PRJ_ATTTACHMENT_EXT = $extension;
+        $_Project->PRJ_ATTTACHMENT_SIZE = $makeAttachment['size'];
         $_Project->save();
         return response($_Project);
     }
