@@ -33,7 +33,227 @@ class Project extends Controller
     }
     public function index_empTransProgress(Request $request)
     {
-        //
+        $compId = [];
+        $deptId = [];
+
+        foreach ($request->empStructure as $key => $valStructure) {
+            array_push($compId, $valStructure['COMP_ID']);
+            array_push($deptId, $valStructure['DEPT_ID']);
+        }
+
+        $result = [];
+        $transactionData = TransactionProject::select(
+            "tr_project_request.PRJ_ID",
+            "tr_project_request.UUID",
+            "tr_project_request.PRJ_NUMBER",
+            "tr_project_request.PRJ_SUBJECT",
+            "tr_project_request.PRJ_NOTES",
+            "tr_project_request.PRJ_TOTAL_AMOUNT_REQUEST",
+            "tr_project_request.PRJ_TOTAL_AMOUNT_USED",
+            "tr_project_request.STATUS",
+            "tr_project_request.APPROVAL_ID",
+            // "tr_project_request.PRJ_ATTTACHMENT
+            "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
+            "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
+        )
+            ->join('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->join('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where([
+                ['tr_project_request.EMPL_ID', $request->employeeId]
+            ])
+            ->whereNotNull('tr_project_request.APPROVAL_ID')
+            ->whereIn('tr_project_request.COMP_ID', $compId)
+            ->whereIn('tr_project_request.DEPT_ID', $deptId)
+            ->get();
+
+        foreach ($transactionData as $keyTrd => $valTrd) {
+            $timeLine = [];
+            /* Set Status */
+            $approvalStatus = Approval::select(
+                "dt_approval.DT_APPR_ID",
+                "dt_approval.STATUS",
+                "ms_approval_code.APPROVAL_CODE_ID",
+                "ms_approval_code.APPROVAL_CODE_DESC",
+                "ms_approval_code.SYS_APPROVAL_VARIANT",
+                "ms_employee.EMPL_FIRSTNAME",
+                "ms_employee.EMPL_LASTNAME",
+            )
+                ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+                ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                ->join('ms_employee', 'dt_approval.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+                ->where([
+                    ['tr_approval.APPROVAL_ID', $valTrd->APPROVAL_ID]
+                ])
+                ->whereRaw('dt_approval.DT_APPR_NUMBER = (
+                    select max(DAP.DT_APPR_NUMBER) 
+                    from tr_approval TAP 
+                    join dt_approval DAP on DAP.APPROVAL_ID = TAP.APPROVAL_ID 
+                    where DAP.APPROVAL_ID = ' . $valTrd->APPROVAL_ID . ' 
+                        and DAP.STATUS != 0 
+                    )')
+                ->get();
+            foreach ($approvalStatus as $key => $valStatus) {
+                $valTrd->APPR_STATUS = $valStatus->STATUS;
+                $valTrd->DT_APPR_ID = $valStatus->DT_APPR_ID;
+                $valTrd->APPROVAL_CODE_ID = $valStatus->APPROVAL_CODE_ID;
+                $valTrd->APPROVAL_COLOR = $valStatus->SYS_APPROVAL_VARIANT;
+                $valTrd->APPROVAL_CODE_DESC = $valStatus->APPROVAL_CODE_DESC;
+                $valTrd->FIRSTNAME = $valStatus->EMPL_FIRSTNAME;
+                $valTrd->LASTNAME = $valStatus->EMPL_LASTNAME;
+            }
+            /* Create Timeline */
+            $getTimeline = Approval::select(
+                "dt_approval.DT_APPR_ID",
+                "dt_approval.USER_ID",
+                "dt_approval.EMPL_ID",
+                "dt_approval.APPROVAL_CODE_ID",
+                "dt_approval.UUID as APPROVAL_UUID",
+                "dt_approval.DT_APPR_NUMBER",
+                "dt_approval.DT_APPR_REQ_DATE",
+                "dt_approval.DT_APPR_DATE",
+                "dt_approval.DT_APPR_DESCRIPTION",
+                "dt_approval.DT_APPR_DEACTIVE",
+                "dt_approval.STATUS",
+                "dt_approval.LOG_ACTIVITY",
+                "ms_approval_code.APPROVAL_CODE_ID",
+                "ms_approval_code.APPROVAL_CODE_DESC",
+                "ms_approval_code.SYS_APPROVAL_VARIANT",
+                "ms_employee.EMPL_FIRSTNAME",
+                "ms_employee.EMPL_LASTNAME",
+            )
+                ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+                ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+                ->join('ms_employee', 'dt_approval.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+                ->where([
+                    ['tr_approval.APPROVAL_ID', $valTrd->APPROVAL_ID],
+                    ['dt_approval.APPROVAL_CODE_ID', '!=', 1]
+                ])
+                ->get();
+            $row = 0;
+            foreach ($getTimeline as $keyApprTimeline => $valApprTimeline) {
+                $valApprTimeline['msStatusColor'] = $valApprTimeline->SYS_APPROVAL_VARIANT == "danger" ? "error" : $valApprTimeline->SYS_APPROVAL_VARIANT;
+                $valApprTimeline['msContent'] = $valApprTimeline->EMPL_FIRSTNAME . ' ' . $valApprTimeline->EMPL_LASTNAME;
+                $time = [];
+                foreach ($valApprTimeline->LOG_ACTIVITY as $keyLgAct => $valActivity) {
+                    $res = "[" . $valActivity['option']['APPROVAL_STATUS_DESC'] . "] " . Carbon::parse($valActivity['option']['DT_APPR_DATE'] == null ? $valActivity['option']['DT_APPR_REQ_DATE'] : $valActivity['option']['DT_APPR_DATE'])->translatedFormat('d F Y | H:i');
+                    array_push($time, $res);
+                }
+                $valApprTimeline['msTime'] = $time;
+                array_push($timeLine, $valApprTimeline);
+                // echo json_encode($valApprTimeline);
+                $row = $row + 1;
+            }
+            $valTrd->PRJ_TIMELINE = $timeLine;
+            array_push($result, $valTrd);
+        }
+
+        // return response($transactionData);
+        return response($result);
+        // print_r(DB::getQueryLog());
+        // $res = DB::raw(vsprintf($rawSql, $bindings));
+        // dd($rawSql, $bindings);
+        // $prjTransaction = [];
+        // $result_2 = [];
+        // foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {
+        //     $data = TransactionProject::select(
+        //         "tr_project_request.PRJ_ID",
+        //         "tr_project_request.UUID",
+        //         "tr_project_request.PRJ_NUMBER",
+        //         "tr_project_request.PRJ_SUBJECT",
+        //         "tr_project_request.PRJ_NOTES",
+        //         "tr_project_request.PRJ_TOTAL_AMOUNT_REQUEST",
+        //         "tr_project_request.PRJ_TOTAL_AMOUNT_USED",
+        //         "tr_project_request.STATUS",
+        //         "tr_project_request.APPROVAL_ID",
+        //         // "tr_project_request.PRJ_ATTTACHMENT",
+        //         "ms_company.COMP_CODE",
+        //         "ms_company.COMP_NAME",
+        //         "ms_departement.DEPT_CODE",
+        //         "ms_departement.DEPT_NAME",
+        //         "DAPT.STATUS as APPR_STATUS",
+        //         "DAPT.DT_APPR_ID",
+        //         "DAPT.APPROVAL_CODE_ID",
+        //         "ms_approval_code.SYS_APPROVAL_VARIANT as APPROVAL_COLOR",
+        //         "ms_approval_code.APPROVAL_CODE_DESC",
+        //         "ms_employee.EMPL_FIRSTNAME as FIRSTNAME",
+        //         "ms_employee.EMPL_LASTNAME as LASTNAME",
+        //     )
+        //         ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+        //         ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+        //         ->leftJoin('dt_approval as DAPT', 'tr_project_request.APPROVAL_ID', '=', 'DAPT.APPROVAL_ID')
+        //         ->leftJoin('ms_approval_code', 'DAPT.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+        //         ->leftJoin('ms_employee', 'DAPT.EMPL_ID', '=', 'ms_employee.EMPL_ID')
+        //         ->where([
+        //             // ['tr_project_request.STATUS', 1],
+        //             ['tr_project_request.EMPL_ID', $request->employeeId],
+        //             ['tr_project_request.COMP_ID', $valEmpStructure['COMP_ID']],
+        //             ['tr_project_request.DEPT_ID', $valEmpStructure['DEPT_ID']],
+        //             ['DAPT.STATUS', '!=', 0],
+        //         ])
+        //         ->whereRaw('DAPT.DT_APPR_NUMBER = (
+        //             select max(DAP.DT_APPR_NUMBER)
+        //             from tr_approval TAP
+        //             join dt_approval DAP on DAP.APPROVAL_ID = TAP.APPROVAL_ID
+        //             where DAP.APPROVAL_ID = DAPT.APPROVAL_ID
+        //             and DAP.STATUS != 0 
+        //             and TAP.COMP_ID=' . $valEmpStructure['COMP_ID'] . ' 
+        //             and TAP.DEPT_ID=' . $valEmpStructure['DEPT_ID'] . ' 
+        //         )')
+        //         ->get();
+        //     foreach ($data as $key => $valData) {
+        //         $timelineData = [];
+        //         $timeline = Approval::select(
+        //             "tr_approval.APPROVAL_ID",
+        //             "tr_approval.STATUS",
+        //             "tr_approval.CREATED_AT",
+        //             "dt_approval.DT_APPR_ID",
+        //             "dt_approval.USER_ID",
+        //             "dt_approval.EMPL_ID",
+        //             "dt_approval.DT_APPR_REQ_DATE",
+        //             "dt_approval.DT_APPR_DATE",
+        //             "dt_approval.DT_APPR_DESCRIPTION",
+        //             "dt_approval.LOG_ACTIVITY",
+        //             "ms_approval_code.APPROVAL_CODE_ID",
+        //             "ms_approval_code.APPROVAL_CODE_DESC",
+        //             "ms_approval_code.SYS_APPROVAL_VARIANT",
+        //         )
+        //             ->join('dt_approval', 'tr_approval.APPROVAL_ID', '=', 'dt_approval.APPROVAL_ID')
+        //             ->join('ms_approval_code', 'dt_approval.APPROVAL_CODE_ID', '=', 'ms_approval_code.APPROVAL_CODE_ID')
+        //             ->where([
+        //                 ['tr_approval.APPROVAL_ID', $valData->APPROVAL_ID],
+        //                 ['dt_approval.APPROVAL_CODE_ID', '!=', 1]
+        //             ])
+        //             ->get();
+        //         $row = 0;
+        //         foreach ($timeline as $keyTimeline => $valTimeline) {
+        //             $empl = Employee::where([['EMPL_ID', $valTimeline->EMPL_ID]])->firstOrFail();
+        //             $valTimeline['msStatusColor'] = $valTimeline->SYS_APPROVAL_VARIANT == "danger" ? "error" : $valTimeline->SYS_APPROVAL_VARIANT;
+        //             $valTimeline['msContent'] = $empl->EMPL_FIRSTNAME . ' ' . $empl->EMPL_LASTNAME;
+        //             $time = [];
+        //             foreach ($valTimeline->LOG_ACTIVITY as $keyLgAct => $valActivity) {
+        //                 $res = "[" . $valActivity['option']['APPROVAL_STATUS_DESC'] . "] " . Carbon::parse($valActivity['option']['DT_APPR_DATE'] == null ? $valActivity['option']['DT_APPR_REQ_DATE'] : $valActivity['option']['DT_APPR_DATE'])->translatedFormat('d F Y H:i');
+        //                 array_push($time, $res);
+        //             }
+        //             $valTimeline['msTime'] = $time;
+
+        //             array_push($timelineData, $valTimeline);
+        //             $row = $row + 1;
+        //         }
+        //         $valData->PRJ_TIMELINE = $timelineData;
+        //     }
+        //     array_push($prjTransaction, $data);
+        // }
+        // foreach ($prjTransaction as $key => $val_1) {
+        //     foreach ($val_1 as $key => $val_2) {
+        //         array_push($result_2, $val_2);
+        //     }
+        // }
+    }
+    public function index_empTransProgress2(Request $request)
+    {
+
         $prjTransaction = [];
         $result_2 = [];
         foreach ($request->empStructure as $keyEmpStructure => $valEmpStructure) {

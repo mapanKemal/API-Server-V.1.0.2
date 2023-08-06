@@ -200,7 +200,7 @@ class ApprovalBase extends Controller
      * 
      * ]
      */
-    private function clean_StructureDuplicate($duplicates = [], $arrayData, $option = [])
+    private function clean_StructureDuplicate($duplicates, $arrayData, $option)
     {
         $exception = isset($option['exceptionVal']) ? $option['exceptionVal'] : []; # Default exception is null array
         $settKey = 0; # Default is unset by last value
