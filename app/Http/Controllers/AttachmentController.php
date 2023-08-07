@@ -22,16 +22,28 @@ class AttachmentController extends Controller
         try {
             $img = Image::make($requestFile->getRealPath())
                 ->save($destinationPath . $filename, 60);
-            return response([
+            return [
                 "filename" => $filename,
                 "ext" => $extension,
                 "size" => $img->filesize(),
-            ], 200);
+            ];
         } catch (\Throwable $th) {
-            return response()->json([
+            return [
                 'status' => false,
                 'message' => $th->getMessage()
-            ], 500);
+            ];
         }
+    }
+
+    public function OFdownload(Request $request, $attachmentName)
+    {
+        $pathParent = 'OnlineForm/';
+        $pathChildren = $request->pathName . '/';
+        $realPath = public_path('/Image/' . $pathParent . $pathChildren . $attachmentName);
+        $headers = [
+            'Content-Type' => 'application/*; image/*',
+        ];
+
+        return response()->download($realPath, $attachmentName, $headers, 'inline');
     }
 }

@@ -383,10 +383,10 @@ class Project extends Controller
             "ms_departement.DEPT_CODE",
             "ms_departement.DEPT_NAME",
         )
-            ->join('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
-            ->join('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
-            ->where('UUID', $uuid)
-            ->firstOrFail());
+            ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where([['UUID', $uuid]])
+            ->first());
     }
 
     public function index_detailByHeader(string $uuid)
@@ -540,7 +540,17 @@ class Project extends Controller
     public function create(Request $request, string $uuid)
     {
         //
-        $_Project = TransactionProject::where([['UUID', $uuid]])->firstOrFail();
+        $_Project = TransactionProject::select(
+            "tr_project_request.*",
+            "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
+            "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
+        )
+            ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where([['UUID', $uuid]])
+            ->first();
 
         /* Project updates */
         $_Project->TRANS_TY_ID = $request->transactionType;
@@ -554,7 +564,7 @@ class Project extends Controller
 
         /* Attachment */
         $attachment = new AttachmentController;
-        $extension = $request->file('attachment')->getExtension();
+        $extension = $request->file('attachment')->getClientOriginalExtension();
         $makeAttachment = $attachment->OFuploadImage($request->attachment, 'Project', $extension);
         $_Project->PRJ_ATTTACHMENT = $makeAttachment['filename'];
         $_Project->PRJ_ATTTACHMENT_EXT = $extension;
@@ -726,7 +736,7 @@ class Project extends Controller
     public function update_header(Request $request, string $uuid)
     {
         // $deptCode = $request->
-        $getProject = TransactionProject::where('UUID', $uuid)->firstOrFail();
+        $getProject = TransactionProject::where('UUID', $uuid)->first();
 
         if ($request->companyCode !== null && $request->departCode !== null) {
             $_company = Company::select('COMP_ID')->where([['COMP_CODE', $request->companyCode]])->firstOrFail();
@@ -755,7 +765,18 @@ class Project extends Controller
         $getProject->PRJ_NUMBER = IdGenerator::generate($idConfig);
         $getProject->save();
 
-        return response($getProject);
+        $reloadProjetc = TransactionProject::select(
+            "tr_project_request.*",
+            "ms_company.COMP_CODE",
+            "ms_company.COMP_NAME",
+            "ms_departement.DEPT_CODE",
+            "ms_departement.DEPT_NAME",
+        )
+            ->leftJoin('ms_company', 'tr_project_request.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->leftJoin('ms_departement', 'tr_project_request.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->where('UUID', $uuid)
+            ->first();
+        return response($reloadProjetc);
     }
 
     /**

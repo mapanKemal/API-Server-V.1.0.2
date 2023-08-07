@@ -112,7 +112,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::prefix('attachment')->group(function () {
-        Route::post('upload', [AttachmentController::class, 'uploadAttachment']);
-        // Route::get('view/{attachmentName}', [AttachmentController::class, 'uploadAttachment']);
+        // Route::post('upload', [AttachmentController::class, 'uploadAttachment']);
+        Route::post('download/{attachmentName}', [AttachmentController::class, 'OFdownload']);
     });
 });
