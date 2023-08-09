@@ -382,8 +382,10 @@ class ApprovalProject extends Controller
         $finalResult = [];
         $_project = new TransactionProject;
         $_approval = new ApprovalBase;
-        $date_1 = date('Y-m-d', strtotime($request->dateRange[0]));
-        $date_2 = date('Y-m-d', strtotime($request->dateRange[1]));
+        $first_day_this_month = date('Y-m-01'); // hard-coded '01' for first day
+        $last_day_this_month  = date('Y-m-t');
+        $date_1 = date('Y-m-d', strtotime(!isset($request->dateRange[0]) ? $first_day_this_month : $request->dateRange[0]));
+        $date_2 = date('Y-m-d', strtotime(!isset($request->dateRange[1]) ? $last_day_this_month : $request->dateRange[1]));
 
         $compId = [];
         $deptId = [];

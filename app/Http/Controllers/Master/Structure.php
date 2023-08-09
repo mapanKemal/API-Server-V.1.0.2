@@ -252,7 +252,7 @@ class Structure extends Controller
                 //     }),
                 // ],
                 "structureName" => ['required'],
-                "description" => ['required'],
+                // "description" => ['required'],
             ],
             [
                 'company.unique' => "The company with this departement is exist",

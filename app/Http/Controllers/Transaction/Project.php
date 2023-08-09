@@ -9,6 +9,7 @@ use App\Models\Approvals\Detail_Approval;
 use App\Models\Master\Company;
 use App\Models\Master\Departement;
 use App\Models\Master\Employee;
+use App\Models\Master\EmployeePosition;
 use App\Models\Transaction\DtProject;
 use App\Models\Transaction\Project as TransactionProject;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
@@ -355,16 +356,42 @@ class Project extends Controller
 
     public function index_newTransaction(Request $request)
     {
-        $result = TransactionProject::select(
+        $compId = [null];
+        $deptId = [null];
+
+        foreach ($request->empStructure as $key => $valStructure) {
+            array_push($compId, $valStructure['COMP_ID']);
+            array_push($deptId, $valStructure['DEPT_ID']);
+        }
+
+        // ->whereIn('tr_project_request.COMP_ID', $compId)
+        // ->whereIn('tr_project_request.DEPT_ID', $deptId)
+        // $result = TransactionProject::select(
+        //     "tr_project_request.*",
+        //     "ms_company.COMP_CODE",
+        //     "ms_company.COMP_NAME",
+        //     "ms_departement.DEPT_CODE",
+        //     "ms_departement.DEPT_NAME",
+        // )
+        //     ->join('fr_employee_position', 'tr_project_request.EMPL_ID', '=', 'fr_employee_position.EMPL_ID')
+        //     ->rightJoin('ms_company', 'fr_employee_position.COMP_ID', '=', 'ms_company.COMP_ID')
+        //     ->rightJoin('ms_departement', 'fr_employee_position.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+        //     ->where([
+        //         ['tr_project_request.STATUS', 0],
+        //         ['tr_project_request.EMPL_ID', $request->employeeId],
+        //     ])
+        //     ->get();
+
+        $result = EmployeePosition::select(
             "tr_project_request.*",
             "ms_company.COMP_CODE",
             "ms_company.COMP_NAME",
             "ms_departement.DEPT_CODE",
             "ms_departement.DEPT_NAME",
         )
-            ->join('fr_employee_position', 'tr_project_request.EMPL_ID', '=', 'fr_employee_position.EMPL_ID')
-            ->leftJoin('ms_company', 'fr_employee_position.COMP_ID', '=', 'ms_company.COMP_ID')
-            ->leftJoin('ms_departement', 'fr_employee_position.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->join('ms_company', 'fr_employee_position.COMP_ID', '=', 'ms_company.COMP_ID')
+            ->join('ms_departement', 'fr_employee_position.DEPT_ID', '=', 'ms_departement.DEPT_ID')
+            ->join('tr_project_request', 'fr_employee_position.EMPL_ID', '=', 'tr_project_request.EMPL_ID')
             ->where([
                 ['tr_project_request.STATUS', 0],
                 ['tr_project_request.EMPL_ID', $request->employeeId],
@@ -563,12 +590,14 @@ class Project extends Controller
         $_Project->PRJ_CLOSE_DATE = date('Y-m-d', strtotime('+' . $this->maxCloseProject . ' day', strtotime($request->dueDate)));
 
         /* Attachment */
-        $attachment = new AttachmentController;
-        $extension = $request->file('attachment')->getClientOriginalExtension();
-        $makeAttachment = $attachment->OFuploadImage($request->attachment, 'Project', $extension);
-        $_Project->PRJ_ATTTACHMENT = $makeAttachment['filename'];
-        $_Project->PRJ_ATTTACHMENT_EXT = $extension;
-        $_Project->PRJ_ATTTACHMENT_SIZE = $makeAttachment['size'];
+        if ($request->file('attachment') !== null) {
+            $attachment = new AttachmentController;
+            $extension = $request->file('attachment')->getClientOriginalExtension();
+            $makeAttachment = $attachment->OFuploadImage($request->attachment, 'Project', $extension);
+            $_Project->PRJ_ATTTACHMENT = $makeAttachment['filename'];
+            $_Project->PRJ_ATTTACHMENT_EXT = $extension;
+            $_Project->PRJ_ATTTACHMENT_SIZE = $makeAttachment['size'];
+        }
         $_Project->save();
         return response($_Project);
     }
