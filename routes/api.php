@@ -27,6 +27,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'cors'], function () {
     Route::get('login', [UserAuthentication::class, 'AuthenticationNeeded'])->name('login'); /* When not authenticate user access */
     Route::post('register', [UserAuthentication::class, 'register']);
     Route::post('create_new_password', [UserAuthentication::class, 'create_newPassword']);
+    Route::post('update_new_password', [UserAuthentication::class, 'update_newPassword']);
     Route::post('signin', [UserAuthentication::class, 'login']);
 
     Route::group(['middleware' => ['auth:api']], function () {

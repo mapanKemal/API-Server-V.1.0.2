@@ -251,6 +251,47 @@ class UserAuthentication extends Controller
             ], 500);
         }
     }
+    public function update_newPassword(Request $request)
+    {
+        $validateUser = Validator::make(
+            $request->all(),
+            [
+                'username' => ['required'],
+                'newPassword' => ['required'],
+                'passwordConfirmed' => ['required'],
+            ],
+            [
+                'newPassword.different' => 'The new password must be different.'
+            ]
+        );
+
+        if ($validateUser->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Input Validation Error',
+                'errors' => $validateUser->errors()
+            ], 418);
+        }
+
+        try {
+            /* Update new password */
+            DB::transaction(function () use ($request) {
+                $setNewPassword = User::where('USERNAME', $request->username)
+                    ->firstOrFail();
+                $setNewPassword->PASSWORD = Hash::make($request->newPassword);
+                $setNewPassword->PASSWORD_VERIFIED_AT = date('Y-m-d H:i:s');
+                $setNewPassword->save();
+            });
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            /* Return Response on error */
+            return response([
+                "error" => $e->getMessage(),
+                "message" => "Sorry, System can't receive your request",
+            ], 500);
+        }
+    }
 
     /**
      * Display a listing of the resource.
