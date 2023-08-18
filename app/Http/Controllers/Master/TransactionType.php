@@ -12,9 +12,22 @@ class TransactionType extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function OF_selectType()
     {
         //
+        // OF Transaction Type
+        $result = [];
+        $transTypes = MasterTransactionType::select()
+            ->where([["SYSTEM_DEFAULT", 1]])
+            ->get();
+        foreach ($transTypes as $keyTy => $valTy) {
+            $res = [
+                "value" => $valTy->TRANS_TY_ID,
+                "label" => $valTy->TRANS_TY_NAME
+            ];
+            array_push($result, $res);
+        }
+        return response($result, 200);
     }
 
     /**
